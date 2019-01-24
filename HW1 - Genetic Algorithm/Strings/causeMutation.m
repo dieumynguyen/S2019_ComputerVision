@@ -1,6 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Task 1.5 Cause DNA mutations
 % Using mutation rate, mutate the progeny at a dna location
+
 function progeny_mutated = causeMutation(progeny, target_len, mutation_rate, DNA_bits) 
     mutate_prob = rand(1);
     progeny_mutated = progeny;

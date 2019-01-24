@@ -1,0 +1,170 @@
+
+%%%%% Random seed
+rng(42);
+
+tic
+%%%% Global variables
+pop_size = 200;
+% pop_size = 100:100:600;
+target_str = 'To be or not to be';
+% target_str = 'Hello';
+% target_str = 'The universe we observe has precisely the properties we should expect if there is at bottom no design no purpose no evil and no good nothing but blind pitiless indifference DNA neither knows nor cares DNA just is And we dance to its music'
+target_len = strlength(target_str);
+DNA_bits = [32, 65:90, 97:122];
+% DNA_bits = [32, 97:122];
+max_gen = 2000;
+% mating_factor = [10:10:100];
+mating_factor = 10;
+breeding_method = 0;
+mutation_rate = 0.01;
+% mutation_rate = [0.001, 0.01, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2];
+kill_factor = 0.9;
+
+%%%%% Genetic algorithm
+% [max_fitness_overall, avg_fitness_overall] = arrayfun(@(x) evolve(pop_size, target_str, ...
+%        target_len, DNA_bits, x, ...
+%        mating_factor, breeding_method, mutation_rate, ...
+%        kill_factor), max_gen);
+% disp(max_fitness_overall)
+% disp(avg_fitness_overall)
+
+[max_fitness_value, avg_fitness_value] = evolve(pop_size, target_str, target_len, DNA_bits, max_gen, ...
+       mating_factor, breeding_method, mutation_rate,...
+       kill_factor);
+
+function [max_fitness_value, avg_fitness_value] = evolve(pop_size, target_str, target_len, DNA_bits, max_gen, ...
+                mating_factor, breeding_method, mutation_rate,...
+                kill_factor)
+    %%%%% Save data for plotting
+    generations = [];
+    max_fitness_over_t = [];
+    avg_fitness_over_t = [];
+    genetic_diverity = [];
+    fittest_strings = {};
+    
+    % Build initial population 
+    tic
+    population = buildPopulation(target_len, pop_size, DNA_bits);
+    toc
+
+    gen = 0;
+    while gen < max_gen
+        % Measure fitness
+        tic
+        population_fitness = calculateFitness(target_str, target_len, population);
+        toc
+        population_fitness = population_fitness + 1e-1;
+
+        % Save data to arrays
+        [max_fitness, max_index] = max(population_fitness);
+        max_string = population{max_index};
+        mean_fitness = mean(population_fitness);
+        diversity = max_fitness - mean_fitness;
+        max_fitness_over_t = [max_fitness_over_t max_fitness];
+        avg_fitness_over_t = [avg_fitness_over_t mean_fitness];
+        genetic_diverity = [genetic_diverity diversity];
+        fittest_strings{gen+1} = max_string;
+        generations = [generations gen];
+
+%         % Print report every x generations
+%         report = ['Generation: ', num2str(gen, '%.3d'), ', Max fitness: ', ...
+%                   num2str(max_fitness-1e-1, '%.2f'), ', Fittest string: ', max_string];
+%         if mod(gen, 100) == 0
+%             disp(report)
+%         end
+
+        % Stop loop if max fitness = 1.0
+        if max_fitness == 1.00 || strcmp(max_string, target_str) == 1
+            disp('Exact match found. Ending early...')
+            disp(report)
+            break
+        end
+
+        % Build mating pool (sorted indices of population members)
+        tic
+        [mating_pool, raffles] = buildMatingPool(population_fitness, mating_factor);
+        toc
+
+        % New population 
+        new_population = {};
+        for member = 1:pop_size
+            % Select 2 random parents and breed 
+            limit_raffle = length(mating_pool) * kill_factor;
+            pick_1 = randsample(mating_pool(1:limit_raffle), 1, true, raffles(1:limit_raffle));
+            pick_2 = randsample(mating_pool(1:limit_raffle), 1, true, raffles(1:limit_raffle));
+            % Get corresponding strings
+            parent_1 = population{mating_pool(pick_1)};
+            parent_2 = population{mating_pool(pick_2)};
+            tic
+            progeny = breed(parent_1, parent_2, target_len, breeding_method);
+            toc
+
+            % Mutate progeny
+            tic
+            progeny_mutated = causeMutation(progeny, target_len, mutation_rate, DNA_bits); 
+            toc
+
+            % New population with children until all new generation is bred
+            new_population{member} = progeny_mutated;
+        end 
+
+        population = new_population;
+
+        gen = gen + 1;
+        disp(gen);
+    end
+    
+    max_fitness_over_t = max_fitness_over_t - 1e-1;
+    avg_fitness_over_t = max_fitness_over_t - 1e-1;
+    
+    max_fitness_value = max_fitness_over_t(end);
+    avg_fitness_value = avg_fitness_over_t(end);
+
+    end_msg = ['Total generations: ', num2str(gen, '%.3d')];
+    disp(end_msg)
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+    % Plot maximum and average fitness over generations
+    tic
+    plot(max_fitness_over_t)
+    hold on
+    plot(avg_fitness_over_t)
+    plot(genetic_diverity)
+    title('Maximum fitness, average fitness, genetic diversity over time')
+    xlabel('Time') 
+    ylabel('Fitness/Diversity')
+    legend('Maximum fitness', 'Average fitness', 'Genetic diversity')
+    hold off
+
+    % Write data to text file
+    fun_1 = @(x) sprintf('%0.4f', x);
+    fun_2 = @(x) sprintf('%0.2e', x);
+    fun_3 = @(x) sprintf('%0.3d', x);
+
+    gens = num2cell(generations);
+    gens_cell = cellfun(fun_3, gens, 'UniformOutput',0);
+    gen_T = cell2table(gens_cell', 'VariableNames', {'Gen'});
+
+    max_fitnesses = num2cell(max_fitness_over_t);
+    max_fitnesses_cell = cellfun(fun_1, max_fitnesses, 'UniformOutput',0);
+    max_T = cell2table(max_fitnesses_cell', 'VariableNames', {'MaxFit'});
+
+    avg_fitnesses = num2cell(avg_fitness_over_t);
+    avg_fitnesses_cell = cellfun(fun_1, avg_fitnesses, 'UniformOutput',0);
+    avg_T = cell2table(avg_fitnesses_cell', 'VariableNames', {'AvgFit'});
+
+    genetic_diverities = num2cell(genetic_diverity);
+    genetic_diverities_cell = cellfun(fun_2, genetic_diverities, 'UniformOutput',0);
+    div_T = cell2table(genetic_diverities_cell', 'VariableNames', {'Diversity'});
+
+    strings = fittest_strings;
+    strings_T = cell2table(strings', 'VariableNames', {'FittestString____'});
+
+    T = [gen_T strings_T max_T avg_T div_T];
+
+    writetable(T, 'Longphrase_gen2000.txt', 'Delimiter', '\t')
+
+end
+
+
+

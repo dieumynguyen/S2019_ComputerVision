@@ -9,13 +9,13 @@
 % - Function outputs mating pool that contains indices of pop 
 % members added to the pool (not the strings)
 
-function [mating_pool, raffles] = buildMatingPool(population_fitness, mating_factor)
+function [mating_pool, raffles, mating_population_fitness] = buildMatingPool(population_fitness, mating_factor, exponential_factor)
+    population_fitness = population_fitness.^exponential_factor;    
+    
     % Normalize fitness values
-%     norm_population_fitness = normalize(population_fitness, 'range');
     norm_population_fitness = population_fitness / max(population_fitness);
     % Multiply mating factor
     mating_population_fitness = norm_population_fitness * mating_factor;
     % Put members in pool
     [raffles, mating_pool] = sort(mating_population_fitness, 'descend'); 
-%     [raffles, mating_pool] = sort(norm_population_fitness, 'descend'); 
 end
