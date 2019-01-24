@@ -1,9 +1,9 @@
 .DS_Store
 # Word temporary
-~$*.doc*
+~$*.docx*
 
 # Word Auto Backup File
-Backup of *.doc*
+Backup of *.docx*
 
 # Excel temporary
 ~$*.xls*
