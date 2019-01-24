@@ -16,3 +16,7 @@ Backup of *.docx*
 
 # Visio autosave temporary files
 *.~vsd*
+
+*.png
+*.jpeg
+*.jpg

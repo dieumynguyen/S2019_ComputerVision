@@ -4,37 +4,47 @@ rng(42);
 
 %%%% Global variables
 pop_size = 200;
-% pop_size = 100:100:600;
+% pop_size = 50:50:300;
 target_str = 'To be or not to be';
-% target_str = 'Hello';
-% target_str = 'The universe we observe has precisely the properties we should expect if there is at bottom no design no purpose no evil and no good nothing but blind pitiless indifference DNA neither knows nor cares DNA just is And we dance to its music'
+% target_str = 'Meow';
+% target_str = 'The universe we observe has precisely the properties we should expect if there is at bottom no design no purpose no evil and no good nothing but blind pitiless indifference DNA neither knows nor cares DNA just is And we dance to its music';
 target_len = strlength(target_str);
 DNA_bits = [32, 65:90, 97:122];
-% DNA_bits = [32, 97:122];
-max_gen = 2000;
-% mating_factor = [10:10:100];
-mating_factor = 1;
-exponential_factor = 4;
+% % DNA_bits = [32:126];
+max_gen = 10000;
+mating_factor = 10;
+exponential_factor = 3;
 breeding_method = 0;
-mutation_rate = 0.01;
-% mutation_rate = [0.001, 0.01, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2];
+mutation_rate = 0.05;
+% mutation_rate = [0, 0.001, 0.0025, 0.005, 0.0075, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5];
 kill_factor = 0.9;
 
-%%%%% Genetic algorithm
-% [max_fitness_overall, avg_fitness_overall] = arrayfun(@(x) evolve(pop_size, target_str, ...
-%        target_len, DNA_bits, x, ...
-%        mating_factor, breeding_method, mutation_rate, ...
-%        kill_factor), max_gen);
-% disp(max_fitness_overall)
-% disp(avg_fitness_overall)
+% %%%%% Genetic algorithm
+% end_maxes = [];
+% end_avgs = [];
+% for i = 1:length(mating_factor)
+%     [max_fitness_value, avg_fitness_value] = evolve(pop_size, target_str, ...
+%                                              target_len, DNA_bits, max_gen, ...
+%                                              mating_factor(i), exponential_factor, ...
+%                                              breeding_method, ...
+%                                              mutation_rate, kill_factor);
+%     end_maxes(i) = max_fitness_value;
+%     end_avgs(i) = avg_fitness_value;
+% end
 
-% [max_fitness_value, avg_fitness_value] = evolve(pop_size, target_str, target_len, DNA_bits, max_gen, ...
-%        mating_factor, breeding_method, mutation_rate,...
-%        kill_factor);
+% [max_fitness_value, avg_fitness_value] = evolve(pop_size, target_str, ...
+%                                              target_len, DNA_bits, max_gen, ...
+%                                              mating_factor, exponential_factor, ...
+%                                              breeding_method, ...
+%                                              mutation_rate, kill_factor);
 
-% function [max_fitness_value, avg_fitness_value] = evolve(pop_size, target_str, target_len, DNA_bits, max_gen, ...
-%                 mating_factor, breeding_method, mutation_rate,...
-%                 kill_factor)
+
+% function [max_fitness_value, avg_fitness_value] = evolve(pop_size, target_str, ...
+%                                                 target_len, DNA_bits, max_gen, ...
+%                                                 mating_factor, exponential_factor, ...
+%                                                 breeding_method, ...
+%                                                 mutation_rate, kill_factor)
+
 %%%%% Save data for plotting
 generations = [];
 max_fitness_over_t = [];
@@ -49,10 +59,9 @@ gen = 0;
 while gen < max_gen
     % Measure fitness
     population_fitness = calculateFitness(target_str, target_len, population);
-%     population_fitness = population_fitness + 1e-1;
-%     population_fitness = population_fitness.^3;
+    population_fitness = population_fitness + 1e-6;
 
-    % Save data to arrays
+
     [max_fitness, max_index] = max(population_fitness);
     max_string = population{max_index};
     mean_fitness = mean(population_fitness);
@@ -63,6 +72,7 @@ while gen < max_gen
     fittest_strings{gen+1} = max_string;
     generations = [generations gen];
 
+
     % Print report every x generations
     report = ['Generation: ', num2str(gen, '%.3d'), ...
               ', Max fitness: ', ...
@@ -70,12 +80,12 @@ while gen < max_gen
               ', Avg fitness: ', ...
               num2str(mean_fitness, '%.2f'), ...
               ', Fittest string: ', max_string];
-    if mod(gen, 100) == 0
+    if mod(gen, 1000) == 0
         disp(report)
     end
 
-    % Stop loop if max fitness = 1.0
-    if max_fitness == 1.00 || strcmp(max_string, target_str) == 1
+    % Stop loop if max fitness = 1.0 or || strcmp(max_string, target_str) == 1
+    if mean_fitness == 1.00 
         disp('Exact match found. Ending early...')
         disp(report)
         break
@@ -89,8 +99,9 @@ while gen < max_gen
     for member = 1:pop_size
         % Select 2 random parents and breed 
         limit_raffle = length(mating_pool) * kill_factor;
-        pick_1 = randsample(mating_pool(1:limit_raffle), 1, true, raffles(1:limit_raffle));
-        pick_2 = randsample(mating_pool(1:limit_raffle), 1, true, raffles(1:limit_raffle));
+        probs = raffles / sum(raffles);
+        pick_1 = randsample(mating_pool(1:limit_raffle), 1, true, probs(1:limit_raffle));
+        pick_2 = randsample(mating_pool(1:limit_raffle), 1, true, probs(1:limit_raffle));
         % Get corresponding strings
         parent_1 = population{mating_pool(pick_1)};
         parent_2 = population{mating_pool(pick_2)};
@@ -109,14 +120,11 @@ while gen < max_gen
 
 end
 
-% max_fitness_over_t = max_fitness_over_t - 1e-1;
-% avg_fitness_over_t = max_fitness_over_t - 1e-1;
+max_fitness_value = max_fitness_over_t(end);
+avg_fitness_value = avg_fitness_over_t(end);
 
-max_fitness_over_t = max_fitness_over_t;
-avg_fitness_over_t = max_fitness_over_t;
-
-max_fitness_value = max_fitness_over_t(end)
-avg_fitness_value = avg_fitness_over_t(end)
+disp(max_fitness_value)
+disp(avg_fitness_value)
 
 end_msg = ['Total generations: ', num2str(gen, '%.3d')];
 disp(end_msg)
@@ -128,12 +136,14 @@ hold on
 plot(avg_fitness_over_t)
 plot(genetic_diverity)
 title('Maximum fitness, average fitness, genetic diversity over time')
+% title('ACSII range: [32:126]');
 xlabel('Time') 
 ylabel('Fitness/Diversity')
+ylim([0 1]);
 legend('Maximum fitness', 'Average fitness', 'Genetic diversity')
 hold off
 
-% Write data to text file
+% % Write data to text file
 % fun_1 = @(x) sprintf('%0.4f', x);
 % fun_2 = @(x) sprintf('%0.2e', x);
 % fun_3 = @(x) sprintf('%0.3d', x);
@@ -159,7 +169,13 @@ hold off
 % 
 % T = [gen_T strings_T max_T avg_T div_T];
 % 
-% writetable(T, 'Longphrase_gen2000.txt', 'Delimiter', '\t')
-% 
-% 
-% 
+% writetable(T, 'FINAL_ORIG_PARAMS_breed1.txt', 'Delimiter', '\t')
+
+
+% JUNK...
+% [max_fitness_overall, avg_fitness_overall] = arrayfun(@(x) evolve(pop_size, target_str, ...
+%        target_len, DNA_bits, x, ...
+%        mating_factor, breeding_method, mutation_rate, ...
+%        kill_factor), max_gen);
+% disp(max_fitness_overall)
+% disp(avg_fitness_overall)

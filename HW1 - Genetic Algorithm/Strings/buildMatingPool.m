@@ -10,6 +10,7 @@
 % members added to the pool (not the strings)
 
 function [mating_pool, raffles, mating_population_fitness] = buildMatingPool(population_fitness, mating_factor, exponential_factor)
+   
     population_fitness = population_fitness.^exponential_factor;    
     
     % Normalize fitness values

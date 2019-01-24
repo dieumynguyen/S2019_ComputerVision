@@ -1,10 +1,11 @@
 
-plot(max_gen, max_fitness_overall)
+cutting = 3;
+plot(mutation_rate(1:end-cutting), end_maxes(1:end-cutting))
 hold on
-plot(max_gen, avg_fitness_overall)
-xlabel('Mating factor') 
+plot(mutation_rate(1:end-cutting), end_avgs(1:end-cutting))
+xlabel('Mutation rates') 
 ylabel('Fitness') 
-ylim([0 1.1])
-xticks(max_gen)
-title('Fitness vs mating factor')
+ylim([0 1])
+xticks(mutation_rate)
+title('Fitness vs Mutation rates')
 legend('Maximum fitness', 'Average fitness')
