@@ -1,0 +1,865 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1504\cocoasubrtf830
+{\fonttbl\f0\fmodern\fcharset0 Courier;}
+{\colortbl;\red255\green255\blue255;\red218\green179\blue255;\red255\green153\blue200;\red0\green191\blue191;
+}
+{\*\expandedcolortbl;;\csgenericrgb\c85490\c70196\c100000;\csgenericrgb\c100000\c60000\c78431;\csgenericrgb\c0\c74902\c74902;
+}
+\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs20 \cf0  
+\fs24 \
+
+\fs20 close \cf2 all\cf0 ; clear;
+\fs24 \
+
+\fs20  
+\fs24 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf3 %%%%% Random seed
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf0 rng(2);
+\fs24 \
+
+\fs20  
+\fs24 \
+
+\fs20 mytic = tic;
+\fs24 \
+
+\fs20  
+\fs24 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf3 %%%% Global variables
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf0 target_orig = imread(\cf2 'Materials/10x10wifi.jpg'\cf0 );
+\fs24 \
+
+\fs20 target = target_orig;
+\fs24 \
+
+\fs20 target = rgb2gray(target_orig);
+\fs24 \
+
+\fs20 [target_x, target_y, target_z] = size(target);
+\fs24 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf3 % Try black and white image for now
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf0 target_z = 1;
+\fs24 \
+
+\fs20 pop_size = numel(target);
+\fs24 \
+
+\fs20 DNA_bits = [0 255];
+\fs24 \
+
+\fs20 max_gen = 1501;
+\fs24 \
+
+\fs20 mating_factor = 10;
+\fs24 \
+
+\fs20 exponential_factor = 1;
+\fs24 \
+
+\fs20 breeding_method = 1;
+\fs24 \
+
+\fs20 mutation_rate = 0.01;
+\fs24 \
+
+\fs20 kill_factor = 0.98;   \cf3 % Only breed top x% to save time
+\fs24 \cf0 \
+
+\fs20 tolerance_1 = 10;
+\fs24 \
+
+\fs20 tolerance_2 = 50;
+\fs24 \
+
+\fs20 mutation_range = [0 30]; \cf3 % Brighten/darken a pixel by an amount
+\fs24 \cf0 \
+
+\fs20 random_mutation_rate = 0.25;
+\fs24 \
+
+\fs20  
+\fs24 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf3 %%%%%%%%%%%%%%% Save data for plotting
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf0 generations = [];
+\fs24 \
+
+\fs20 max_fitness_over_t = [];
+\fs24 \
+
+\fs20 avg_fitness_over_t = [];
+\fs24 \
+
+\fs20 genetic_diverity = [];
+\fs24 \
+
+\fs20  
+\fs24 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf3 %%%%%%%%%%%%%%% Genetic Algorithm 
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf0 population = buildPopulation(DNA_bits, pop_size, target_x, target_y, target_z);
+\fs24 \
+
+\fs20  
+\fs24 \
+
+\fs20 img_gens = round(linspace(0, max_gen-1, 9));
+\fs24 \
+
+\fs20  
+\fs24 \
+
+\fs20 gen = 0;
+\fs24 \
+
+\fs20 img_num = 1;  \cf3 % Increment when each of 9 subplots is plotted 
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf4 while\cf0  gen < max_gen
+\fs24 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf0         
+\fs24 \
+
+\fs20     \cf3 % Measure fitness
+\fs24 \cf0 \
+
+\fs20     population_fitness = calculateFitness(pop_size, population, target, \cf4 ...
+\fs24 \cf0 \
+
+\fs20                          target_x, target_y, tolerance_1, tolerance_2) + 1e-5;
+\fs24 \
+
+\fs20     [max_fitness, max_index] = max(population_fitness);
+\fs24 \
+
+\fs20     mean_fitness = mean(population_fitness);
+\fs24 \
+
+\fs20     
+\fs24 \
+
+\fs20     \cf3 % Plotting data
+\fs24 \cf0 \
+
+\fs20     diversity = max_fitness - mean_fitness;
+\fs24 \
+
+\fs20     max_fitness_over_t = [max_fitness_over_t max_fitness];
+\fs24 \
+
+\fs20     avg_fitness_over_t = [avg_fitness_over_t mean_fitness];
+\fs24 \
+
+\fs20     genetic_diverity = [genetic_diverity diversity];
+\fs24 \
+
+\fs20     generations = [generations gen];
+\fs24 \
+
+\fs20     
+\fs24 \
+
+\fs20     \cf3 % Subplot max images
+\fs24 \cf0 \
+
+\fs20     \cf4 if\cf0  any(img_gens == gen) == 1 
+\fs24 \
+
+\fs20        subplot(3,3,img_num);
+\fs24 \
+
+\fs20        image = population(:,:,:,max_index);
+\fs24 \
+
+\fs20        imshow(uint8(image));
+\fs24 \
+
+\fs20        title([\cf2 'Generation: '\cf0 , num2str(gen)]);
+\fs24 \
+
+\fs20        img_num = img_num + 1;
+\fs24 \
+
+\fs20     \cf4 end
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf4  
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf0     \cf3 % Print report every x generations
+\fs24 \cf0 \
+
+\fs20     report = [\cf2 'Generation: '\cf0 , \cf4 ...
+\fs24 \cf0 \
+
+\fs20               num2str(gen, \cf2 '%.3d'\cf0 ), \cf4 ...
+\fs24 \cf0 \
+
+\fs20               \cf2 ', Max fitness: '\cf0 , \cf4 ...
+\fs24 \cf0 \
+
+\fs20               num2str(max_fitness, \cf2 '%.2f'\cf0 ), \cf4 ...
+\fs24 \cf0 \
+
+\fs20               \cf2 ', Avg fitness: '\cf0 , \cf4 ...
+\fs24 \cf0 \
+
+\fs20               num2str(mean_fitness, \cf2 '%.2f'\cf0 )];
+\fs24 \
+
+\fs20     \cf4 if\cf0  mod(gen, 10) == 0
+\fs24 \
+
+\fs20         disp(report)
+\fs24 \
+
+\fs20     \cf4 end
+\fs24 \cf0 \
+
+\fs20     
+\fs24 \
+
+\fs20     \cf3 % Stop loop if target found
+\fs24 \cf0 \
+
+\fs20     \cf4 if\cf0  max_fitness == 1.00 
+\fs24 \
+
+\fs20         disp(\cf2 'Exact match found. Ending early...'\cf0 )
+\fs24 \
+
+\fs20         disp(report)
+\fs24 \
+
+\fs20         \cf4 break
+\fs24 \cf0 \
+
+\fs20     \cf4 end
+\fs24 \cf0 \
+
+\fs20     
+\fs24 \
+
+\fs20     \cf3 % Build mating pool
+\fs24 \cf0 \
+
+\fs20     [mating_pool, raffles] = buildMatingPool(population_fitness, \cf4 ...
+\fs24 \cf0 \
+
+\fs20                              mating_factor, exponential_factor);
+\fs24 \
+
+\fs20     
+\fs24 \
+
+\fs20     \cf3 % Breed new population
+\fs24 \cf0 \
+
+\fs20     new_population = population;
+\fs24 \
+
+\fs20     \cf4 for\cf0  member = 1:pop_size
+\fs24 \
+
+\fs20         \cf3 % Select 2 random parents
+\fs24 \cf0 \
+
+\fs20         limit_raffle = round(length(mating_pool) * (1-kill_factor));
+\fs24 \
+
+\fs20         probs = raffles / sum(raffles);
+\fs24 \
+
+\fs20         pick_1 = randsample(mating_pool(1:limit_raffle), 1, true, probs(1:limit_raffle));
+\fs24 \
+
+\fs20         pick_2 = randsample(mating_pool(1:limit_raffle), 1, true, probs(1:limit_raffle));
+\fs24 \
+
+\fs20         parent_1 = population(:,:,:,mating_pool(pick_1));
+\fs24 \
+
+\fs20         parent_2 = population(:,:,:,mating_pool(pick_2));       
+\fs24 \
+
+\fs20         
+\fs24 \
+
+\fs20         \cf3 % Breed a progeny 
+\fs24 \cf0 \
+
+\fs20         progeny = breed(parent_1, parent_2, pop_size, breeding_method);
+\fs24 \
+
+\fs20  
+\fs24 \
+
+\fs20         \cf3 % Mutate progeny
+\fs24 \cf0 \
+
+\fs20         progeny_mutation = causeMutation(DNA_bits, progeny, mutation_rate, \cf4 ...
+\fs24 \cf0 \
+
+\fs20                            target_x, target_y, target_z, \cf4 ...
+\fs24 \cf0 \
+
+\fs20                            mutation_range, random_mutation_rate);
+\fs24 \
+
+\fs20  
+\fs24 \
+
+\fs20         new_population(:,:,:,member) = progeny_mutation;
+\fs24 \
+
+\fs20     \cf4 end
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf4  
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf0     population = new_population;   
+\fs24 \
+
+\fs20                          
+\fs24 \
+
+\fs20     gen = gen + 1;
+\fs24 \
+
+\fs20     
+\fs24 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf4 end
+\fs24 \cf0 \
+
+\fs20 \cf4  
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf0 end_msg = [\cf2 'Total generations: '\cf0 , num2str(gen, \cf2 '%.3d'\cf0 )];
+\fs24 \
+
+\fs20 disp(end_msg)
+\fs24 \
+
+\fs20  
+\fs24 \
+
+\fs20 mytoc = toc(mytic);
+\fs24 \
+
+\fs20 sgtitle([\cf2 'N = '\cf0 , num2str(max_gen-1), \cf2 ', size = '\cf0 , num2str(target_x), \cf4 ...
+\fs24 \cf0 \
+
+\fs20          \cf2 'x'\cf0 , num2str(target_y), \cf2 ', elapsedTime = '\cf0 , num2str(mytoc), \cf2 ' sec'\cf0 ]);
+\fs24 \
+
+\fs20  
+\fs24 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf3 %%%%%%%%%%%%%%% Plotting & Writing txt
+\fs24 \cf0 \
+
+\fs20 \cf3 % Plot maximum and average fitness over generations
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf0 figure
+\fs24 \
+
+\fs20 plot(max_fitness_over_t)
+\fs24 \
+
+\fs20 hold \cf2 on
+\fs24 \cf0 \
+
+\fs20 plot(avg_fitness_over_t)
+\fs24 \
+
+\fs20 plot(genetic_diverity)
+\fs24 \
+
+\fs20 title(\cf2 'Maximum fitness, average fitness, genetic diversity over time'\cf0 )
+\fs24 \
+
+\fs20 xlabel(\cf2 'Time'\cf0 )
+\fs24 \
+
+\fs20 ylabel(\cf2 'Fitness/Diversity'\cf0 )
+\fs24 \
+
+\fs20 xlim([0 max_gen+5]);
+\fs24 \
+
+\fs20 ylim([0 1]);
+\fs24 \
+
+\fs20 legend(\cf2 'Maximum fitness'\cf0 , \cf2 'Average fitness'\cf0 , \cf2 'Genetic diversity'\cf0 , \cf2 'best'\cf0 )
+\fs24 \
+
+\fs20 hold \cf2 off
+\fs24 \cf0 \
+
+\fs20      
+\fs24 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf3 % Write data to text file
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf0 fun_1 = @(x) sprintf(\cf2 '%0.4f'\cf0 , x);
+\fs24 \
+
+\fs20 fun_2 = @(x) sprintf(\cf2 '%0.2e'\cf0 , x);
+\fs24 \
+
+\fs20 fun_3 = @(x) sprintf(\cf2 '%0.3d'\cf0 , x);
+\fs24 \
+
+\fs20  
+\fs24 \
+
+\fs20 max_fitnesses = num2cell(max_fitness_over_t);
+\fs24 \
+
+\fs20 max_fitnesses_cell = cellfun(fun_1, max_fitnesses, \cf2 'UniformOutput'\cf0 ,0);
+\fs24 \
+
+\fs20 max_T = cell2table(max_fitnesses_cell', \cf2 'VariableNames'\cf0 , \{\cf2 'MaxFit'\cf0 \});
+\fs24 \
+
+\fs20  
+\fs24 \
+
+\fs20 avg_fitnesses = num2cell(avg_fitness_over_t);
+\fs24 \
+
+\fs20 avg_fitnesses_cell = cellfun(fun_1, avg_fitnesses, \cf2 'UniformOutput'\cf0 ,0);
+\fs24 \
+
+\fs20 avg_T = cell2table(avg_fitnesses_cell', \cf2 'VariableNames'\cf0 , \{\cf2 'AvgFit'\cf0 \});
+\fs24 \
+
+\fs20  
+\fs24 \
+
+\fs20 genetic_diverities = num2cell(genetic_diverity);
+\fs24 \
+
+\fs20 genetic_diverities_cell = cellfun(fun_2, genetic_diverities, \cf2 'UniformOutput'\cf0 ,0);
+\fs24 \
+
+\fs20 div_T = cell2table(genetic_diverities_cell', \cf2 'VariableNames'\cf0 , \{\cf2 'Diversity'\cf0 \});
+\fs24 \
+
+\fs20  
+\fs24 \
+
+\fs20 gens = num2cell(generations);
+\fs24 \
+
+\fs20 gens_cell = cellfun(fun_3, gens, \cf2 'UniformOutput'\cf0 ,0);
+\fs24 \
+
+\fs20 gen_T = cell2table(gens_cell', \cf2 'VariableNames'\cf0 , \{\cf2 'Gen'\cf0 \});
+\fs24 \
+
+\fs20  
+\fs24 \
+
+\fs20 T = [gen_T max_T avg_T div_T];
+\fs24 \
+
+\fs20  
+\fs24 \
+
+\fs20 writetable(T, \cf2 'testestestugh.txt'\cf0 , \cf2 'Delimiter'\cf0 , \cf2 '\\t'\cf0 )    
+\fs24 \
+
+\fs20  
+\fs24 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf3 %%%%%%%%%%%%%%% Functions
+\fs24 \cf0 \
+
+\fs20 \cf3  
+\fs24 \cf0 \
+
+\fs20 \cf3 % 1. Build initial population and store in 4-D matrix
+\fs24 \cf0 \
+
+\fs20 \cf3 % Access each matrix/img by: population(:,:,:,i)
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf4 function\cf0  population = buildPopulation(DNA_bits, pop_size, target_x, target_y, target_z)
+\fs24 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf0     population = randi(DNA_bits, [target_x, target_y, target_z, pop_size]);
+\fs24 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf4 end
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf0     
+\fs24 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf3 % 2. Calculate fitness 
+\fs24 \cf0 \
+
+\fs20 \cf3 % Compare each pop member to target pixel by pixel
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf4 function\cf0  fitness_1 = calculateFitness(pop_size, population, target,\cf4 ...
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf0                      target_x, target_y, tolerance_1, tolerance_2)
+\fs24 \
+
+\fs20     \cf3 % Old way to compare pixel by pixel
+\fs24 \cf0 \
+
+\fs20     population_fitness = sum(population == target, [1,2,3]) / pop_size; 
+\fs24 \
+
+\fs20     
+\fs24 \
+
+\fs20     \cf3 % New methods to measure fitness, will have 4 fitness values:
+\fs24 \cf0 \
+
+\fs20     
+\fs24 \
+
+\fs20     \cf3 % 1. Percent of values that fit within a tolerance range from the target image
+\fs24 \cf0 \
+
+\fs20     abs_term_1 = abs(population - double(target));
+\fs24 \
+
+\fs20     fitness_1 = sum(abs_term_1 < tolerance_1, [1,2,3]) / pop_size;
+\fs24 \
+
+\fs20     
+\fs24 \
+
+\fs20     \cf3 % 2. Check avg values around pixels
+\fs24 \cf0 \
+
+\fs20     \cf3 % Compare meanFilter version of target and population with same
+\fs24 \cf0 \
+
+\fs20     \cf3 % tolerance
+\fs24 \cf0 \
+
+\fs20     filtered_target = meanFilter(double(target), target_x, target_y);
+\fs24 \
+
+\fs20     filtered_pop = meanFilter(population, target_x, target_y);
+\fs24 \
+
+\fs20     abs_term_2 = abs(filtered_pop - filtered_target);
+\fs24 \
+
+\fs20     fitness_2 = sum(abs_term_2 < tolerance_1, [1,2,3]) / pop_size;
+\fs24 \
+
+\fs20     
+\fs24 \
+
+\fs20     \cf3 % 3. Check rate of change bw pixels (how quickly the color changes)
+\fs24 \cf0 \
+
+\fs20     \cf3 % Rate of change up/down compared to target image
+\fs24 \cf0 \
+
+\fs20     diff_target_updown = diff(double(target),1,1);
+\fs24 \
+
+\fs20     diff_pop_updown = diff(population,1,1);
+\fs24 \
+
+\fs20     abs_term_3 = abs(diff_pop_updown - diff_target_updown);
+\fs24 \
+
+\fs20     fitness_3 = sum(abs_term_3 < tolerance_2, [1,2,3]) / pop_size;
+\fs24 \
+
+\fs20     
+\fs24 \
+
+\fs20     \cf3 % Rate of change left/right compared to target image
+\fs24 \cf0 \
+
+\fs20     diff_target_lr = diff(double(target),1,1);
+\fs24 \
+
+\fs20     diff_pop_lr = diff(population,1,1);
+\fs24 \
+
+\fs20     abs_term_4 = abs(diff_pop_lr - diff_target_lr);
+\fs24 \
+
+\fs20     fitness_4 = sum(abs_term_4 < tolerance_2, [1,2,3]) / pop_size;
+\fs24 \
+
+\fs20  
+\fs24 \
+
+\fs20     fit_total = sqrt(fitness_1.^2 + fitness_2.^2 + fitness_3.^2 + fitness_4.^2) / 2;
+\fs24 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf4 end
+\fs24 \cf0 \
+
+\fs20 \cf4  
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf3 % 2.1. Mean filter to check average values around pixels
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf4 function\cf0  filtered_img = meanFilter(img_to_filter, target_x, target_y)
+\fs24 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf0     h = ones(target_x, target_y);
+\fs24 \
+
+\fs20     filtered_img = imfilter(log(img_to_filter), h, \cf2 'replicate'\cf0 );
+\fs24 \
+
+\fs20     filtered_img = exp(filtered_img);
+\fs24 \
+
+\fs20     filtered_img = filtered_img .^ (1/numel(h));
+\fs24 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf4 end
+\fs24 \cf0 \
+
+\fs20 \cf4  
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf3 % 3. Build mating pool
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf4 function\cf0  [mating_pool, raffles] = buildMatingPool(population_fitness, \cf4 ...
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf0                                   mating_factor, exponential_factor)
+\fs24 \
+
+\fs20     \cf3 % Apply exponential factor
+\fs24 \cf0 \
+
+\fs20     population_fitness_exp = population_fitness.^exponential_factor;    
+\fs24 \
+
+\fs20     \cf3 % Normalize fitness values
+\fs24 \cf0 \
+
+\fs20     norm_population_fitness = population_fitness_exp / max(population_fitness_exp);
+\fs24 \
+
+\fs20     \cf3 % Multiply mating factor
+\fs24 \cf0 \
+
+\fs20     mating_population_fitness = norm_population_fitness * mating_factor;
+\fs24 \
+
+\fs20     \cf3 % Put members in pool
+\fs24 \cf0 \
+
+\fs20     [sorted_raffles, sorted_mating_pool] = sort(mating_population_fitness, \cf2 'descend'\cf0 );
+\fs24 \
+
+\fs20     raffles = squeeze(sorted_raffles);
+\fs24 \
+
+\fs20     mating_pool = squeeze(sorted_mating_pool);
+\fs24 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf4 end
+\fs24 \cf0 \
+
+\fs20 \cf4  
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf3 % 4. Breed
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf4 function\cf0  progeny = breed(parent_1, parent_2, pop_size, breeding_method)
+\fs24 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf0     progeny = parent_1;
+\fs24 \
+
+\fs20     \cf4 if\cf0  breeding_method == 0 
+\fs24 \
+
+\fs20         midpoint_dna = randi(numel(parent_1));
+\fs24 \
+
+\fs20         progeny(midpoint_dna:end) = parent_2(midpoint_dna:end);   
+\fs24 \
+
+\fs20     \cf4 elseif\cf0  breeding_method == 1
+\fs24 \
+
+\fs20         selections_1_idxs = randi([0 1], 1, pop_size);
+\fs24 \
+
+\fs20         selections_2_idxs = 1 - selections_1_idxs;
+\fs24 \
+
+\fs20         selections_2 = find(selections_2_idxs);
+\fs24 \
+
+\fs20         progeny(selections_2) = parent_2(selections_2);
+\fs24 \
+
+\fs20     \cf4 end\cf0    
+\fs24 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf4 end
+\fs24 \cf0 \
+
+\fs20 \cf4  
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf3 % 5. Mutate
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf4 function\cf0  progeny_mutation = causeMutation(DNA_bits, progeny, mutation_rate, \cf4 ...
+\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf0                             target_x, target_y, target_z, \cf4 ...
+\fs24 \cf0 \
+
+\fs20                             mutation_range, random_mutation_rate)
+\fs24 \
+
+\fs20     progeny_mutation = progeny;
+\fs24 \
+
+\fs20                         
+\fs24 \
+
+\fs20     random_sign = randsample([-1 0 1], 1, true, [0.5 0 0.5]);
+\fs24 \
+
+\fs20     offset_mutations_range = randi(mutation_range, [target_x, target_y, target_z]);
+\fs24 \
+
+\fs20     mutations_offset = progeny_mutation + random_sign*offset_mutations_range;
+\fs24 \
+
+\fs20     mutations_random = randi(DNA_bits, [target_x, target_y, target_z]);
+\fs24 \
+
+\fs20     
+\fs24 \
+
+\fs20     \cf3 % Choose if pixel will be mutated with mutation rate & mutate with
+\fs24 \cf0 \
+
+\fs20     \cf3 % offset
+\fs24 \cf0 \
+
+\fs20     mask_1 = rand([target_x, target_y, target_z]);
+\fs24 \
+
+\fs20     mutations_mask = mask_1 <= mutation_rate; 
+\fs24 \
+
+\fs20     progeny_mutation(mutations_mask) = mutations_offset(mutations_mask);
+\fs24 \
+
+\fs20     
+\fs24 \
+
+\fs20     \cf3 % Choose if chosen pixel will be RANDOMLY mutated with random mutation rate
+\fs24 \cf0 \
+
+\fs20     \cf3 % Offset mutations will be replaced with random mutation
+\fs24 \cf0 \
+
+\fs20     mask_2 = rand([target_x, target_y, target_z]);
+\fs24 \
+
+\fs20     combine_mask = mutations_mask .* mask_2;
+\fs24 \
+
+\fs20     random_mutations_mask = combine_mask <= random_mutation_rate & combine_mask > 0;
+\fs24 \
+
+\fs20     progeny_mutation(random_mutations_mask) = mutations_random(random_mutations_mask);
+\fs24 \
+
+\fs20     
+\fs24 \
+\pard\pardeftab720\partightenfactor0
+
+\fs20 \cf4 end
+\fs24 \cf0 \
+\
+}

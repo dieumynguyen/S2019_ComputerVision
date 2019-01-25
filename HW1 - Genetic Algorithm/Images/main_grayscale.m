@@ -1,5 +1,5 @@
 
-close all; clear all;
+close all; clear;
 
 %%%%% Random seed
 rng(2);
@@ -8,16 +8,16 @@ mytic = tic;
 
 %%%% Global variables
 target_orig = imread('Materials/10x10wifi.jpg');
-% target = target_orig;
+target = target_orig;
 target = rgb2gray(target_orig);
 [target_x, target_y, target_z] = size(target);
 % Try black and white image for now
 target_z = 1;
 pop_size = numel(target);
 DNA_bits = [0 255];
-max_gen = 201;
+max_gen = 1501;
 mating_factor = 10;
-exponential_factor = 3;
+exponential_factor = 1;
 breeding_method = 1;
 mutation_rate = 0.01;
 kill_factor = 0.98;   % Only breed top x% to save time
@@ -58,7 +58,7 @@ while gen < max_gen
     if any(img_gens == gen) == 1 
        subplot(3,3,img_num);
        image = population(:,:,:,max_index);
-       imshow(image, []);
+       imshow(uint8(image));
        title(['Generation: ', num2str(gen)]);
        img_num = img_num + 1;
     end
@@ -158,7 +158,7 @@ gen_T = cell2table(gens_cell', 'VariableNames', {'Gen'});
 
 T = [gen_T max_T avg_T div_T];
 
-writetable(T, 'img_evolution.txt', 'Delimiter', '\t')    
+writetable(T, 'testestestugh.txt', 'Delimiter', '\t')    
 
 %%%%%%%%%%%%%%% Functions
 
@@ -170,7 +170,7 @@ end
     
 % 2. Calculate fitness 
 % Compare each pop member to target pixel by pixel
-function fit_total = calculateFitness(pop_size, population, target,...
+function fitness_1 = calculateFitness(pop_size, population, target,...
                      target_x, target_y, tolerance_1, tolerance_2)
     % Old way to compare pixel by pixel
     population_fitness = sum(population == target, [1,2,3]) / pop_size; 
@@ -203,7 +203,6 @@ function fit_total = calculateFitness(pop_size, population, target,...
     fitness_4 = sum(abs_term_4 < tolerance_2, [1,2,3]) / pop_size;
 
     fit_total = sqrt(fitness_1.^2 + fitness_2.^2 + fitness_3.^2 + fitness_4.^2) / 2;
-%     fit_total_norm = (fit_total - min(fit_total)) / (max(fit_total) - min(fit_total));
 end
 
 % 2.1. Mean filter to check average values around pixels
