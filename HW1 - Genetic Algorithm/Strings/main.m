@@ -52,7 +52,7 @@ avg_fitness_over_t = [];
 genetic_diverity = [];
 fittest_strings = {};
 
-% Build initial population 
+% Build initial population
 population = buildPopulation(target_len, pop_size, DNA_bits);
 
 gen = 0;
@@ -85,7 +85,7 @@ while gen < max_gen
     end
 
     % Stop loop if max fitness = 1.0 or || strcmp(max_string, target_str) == 1
-    if mean_fitness == 1.00 
+    if mean_fitness == 1.00
         disp('Exact match found. Ending early...')
         disp(report)
         break
@@ -94,10 +94,10 @@ while gen < max_gen
     % Build mating pool (sorted indices of population members)
     [mating_pool, raffles] = buildMatingPool(population_fitness, mating_factor, exponential_factor);
 
-    % New population 
+    % New population
     new_population = {};
     for member = 1:pop_size
-        % Select 2 random parents and breed 
+        % Select 2 random parents and breed
         limit_raffle = length(mating_pool) * kill_factor;
         probs = raffles / sum(raffles);
         pick_1 = randsample(mating_pool(1:limit_raffle), 1, true, probs(1:limit_raffle));
@@ -105,14 +105,15 @@ while gen < max_gen
         % Get corresponding strings
         parent_1 = population{mating_pool(pick_1)};
         parent_2 = population{mating_pool(pick_2)};
+        
         progeny = breed(parent_1, parent_2, target_len, breeding_method);
 
         % Mutate progeny
-        progeny_mutated = causeMutation(progeny, target_len, mutation_rate, DNA_bits); 
+        progeny_mutated = causeMutation(progeny, target_len, mutation_rate, DNA_bits);
 
         % New population with children until all new generation is bred
         new_population{member} = progeny_mutated;
-    end 
+    end
 
     population = new_population;
 
@@ -129,7 +130,7 @@ disp(avg_fitness_value)
 end_msg = ['Total generations: ', num2str(gen, '%.3d')];
 disp(end_msg)
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Plot maximum and average fitness over generations
 plot(max_fitness_over_t)
 hold on
@@ -137,7 +138,7 @@ plot(avg_fitness_over_t)
 plot(genetic_diverity)
 title('Maximum fitness, average fitness, genetic diversity over time')
 % title('ACSII range: [32:126]');
-xlabel('Time') 
+xlabel('Time')
 ylabel('Fitness/Diversity')
 ylim([0 1]);
 legend('Maximum fitness', 'Average fitness', 'Genetic diversity')
@@ -147,28 +148,28 @@ hold off
 % fun_1 = @(x) sprintf('%0.4f', x);
 % fun_2 = @(x) sprintf('%0.2e', x);
 % fun_3 = @(x) sprintf('%0.3d', x);
-% 
+%
 % gens = num2cell(generations);
 % gens_cell = cellfun(fun_3, gens, 'UniformOutput',0);
 % gen_T = cell2table(gens_cell', 'VariableNames', {'Gen'});
-% 
+%
 % max_fitnesses = num2cell(max_fitness_over_t);
 % max_fitnesses_cell = cellfun(fun_1, max_fitnesses, 'UniformOutput',0);
 % max_T = cell2table(max_fitnesses_cell', 'VariableNames', {'MaxFit'});
-% 
+%
 % avg_fitnesses = num2cell(avg_fitness_over_t);
 % avg_fitnesses_cell = cellfun(fun_1, avg_fitnesses, 'UniformOutput',0);
 % avg_T = cell2table(avg_fitnesses_cell', 'VariableNames', {'AvgFit'});
-% 
+%
 % genetic_diverities = num2cell(genetic_diverity);
 % genetic_diverities_cell = cellfun(fun_2, genetic_diverities, 'UniformOutput',0);
 % div_T = cell2table(genetic_diverities_cell', 'VariableNames', {'Diversity'});
-% 
+%
 % strings = fittest_strings;
 % strings_T = cell2table(strings', 'VariableNames', {'FittestString____'});
-% 
+%
 % T = [gen_T strings_T max_T avg_T div_T];
-% 
+%
 % writetable(T, 'FINAL_ORIG_PARAMS_breed1.txt', 'Delimiter', '\t')
 
 

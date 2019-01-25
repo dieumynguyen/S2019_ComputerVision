@@ -15,7 +15,7 @@ target = rgb2gray(target_orig);
 target_z = 1;
 pop_size = numel(target);
 DNA_bits = [0 255];
-max_gen = 5001;
+max_gen = 501;
 mating_factor = 10;
 exponential_factor = 3;
 breeding_method = 1;
@@ -23,7 +23,6 @@ mutation_rate = 0.01;
 kill_factor = 0.98;   % Only breed top x% to save time
 tolerance_1 = 10;
 tolerance_2 = 50;
-mutationRange = 30; % Brighten/darken a pixel by an amount
 
 %%%%%%%%%%%%%%% Save data for plotting
 generations = [];
@@ -169,7 +168,7 @@ end
     
 % 2. Calculate fitness 
 % Compare each pop member to target pixel by pixel
-function fit_total = calculateFitness(pop_size, population, target,...
+function fitness_4 = calculateFitness(pop_size, population, target,...
                      target_x, target_y, tolerance_1, tolerance_2)
     % Old way to compare pixel by pixel
     population_fitness = sum(population == target, [1,2,3]) / pop_size; 
@@ -201,8 +200,7 @@ function fit_total = calculateFitness(pop_size, population, target,...
     abs_term_4 = abs(diff_pop_lr - diff_target_lr);
     fitness_4 = sum(abs_term_4 < tolerance_2, [1,2,3]) / pop_size;
 
-    fit_total = sqrt(fitness_1.^2 + fitness_2.^2 + fitness_3.^2 + fitness_4.^2) / 2;
-%     fit_total_norm = (fit_total - min(fit_total)) / (max(fit_total) - min(fit_total));
+    fit_total = sqrt(fit_1.^2 + fit_2.^2);
 end
 
 % 2.1. Mean filter to check average values around pixels
