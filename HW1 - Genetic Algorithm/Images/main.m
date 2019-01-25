@@ -15,7 +15,7 @@ target = rgb2gray(target_orig);
 target_z = 1;
 pop_size = numel(target);
 DNA_bits = [0 255];
-max_gen = 5001;
+max_gen = 201;
 mating_factor = 10;
 exponential_factor = 3;
 breeding_method = 1;
@@ -23,7 +23,8 @@ mutation_rate = 0.01;
 kill_factor = 0.98;   % Only breed top x% to save time
 tolerance_1 = 10;
 tolerance_2 = 50;
-mutationRange = 30; % Brighten/darken a pixel by an amount
+mutation_range = [0 30]; % Brighten/darken a pixel by an amount
+random_mutation_rate = 0.25;
 
 %%%%%%%%%%%%%%% Save data for plotting
 generations = [];
@@ -100,7 +101,8 @@ while gen < max_gen
 
         % Mutate progeny
         progeny_mutation = causeMutation(DNA_bits, progeny, mutation_rate, ...
-                           target_x, target_y, target_z);
+                           target_x, target_y, target_z, ...
+                           mutation_range, random_mutation_rate);
 
         new_population(:,:,:,member) = progeny_mutation;
     end
@@ -157,7 +159,6 @@ gen_T = cell2table(gens_cell', 'VariableNames', {'Gen'});
 T = [gen_T max_T avg_T div_T];
 
 writetable(T, 'img_evolution.txt', 'Delimiter', '\t')    
-
 
 %%%%%%%%%%%%%%% Functions
 
@@ -244,9 +245,26 @@ end
 
 % 5. Mutate
 function progeny_mutation = causeMutation(DNA_bits, progeny, mutation_rate, ...
-                            target_x, target_y, target_z)
-    mutations = randi(DNA_bits, [target_x, target_y, target_z]);
-    mutations_mask = rand([target_x, target_y, target_z]) <= mutation_rate; 
+                            target_x, target_y, target_z, ...
+                            mutation_range, random_mutation_rate)
     progeny_mutation = progeny;
-    progeny_mutation(mutations_mask) = mutations(mutations_mask);
+                        
+    random_sign = randsample([-1 0 1], 1, true, [0.5 0 0.5]);
+    offset_mutations_range = randi(mutation_range, [target_x, target_y, target_z]);
+    mutations_offset = progeny_mutation + random_sign*offset_mutations_range;
+    mutations_random = randi(DNA_bits, [target_x, target_y, target_z]);
+    
+    % Choose if pixel will be mutated with mutation rate & mutate with
+    % offset
+    mask_1 = rand([target_x, target_y, target_z]);
+    mutations_mask = mask_1 <= mutation_rate; 
+    progeny_mutation(mutations_mask) = mutations_offset(mutations_mask);
+    
+    % Choose if chosen pixel will be RANDOMLY mutated with random mutation rate
+    % Offset mutations will be replaced with random mutation
+    mask_2 = rand([target_x, target_y, target_z]);
+    combine_mask = mutations_mask .* mask_2;
+    random_mutations_mask = combine_mask <= random_mutation_rate & combine_mask > 0;
+    progeny_mutation(random_mutations_mask) = mutations_random(random_mutations_mask);
+    
 end
