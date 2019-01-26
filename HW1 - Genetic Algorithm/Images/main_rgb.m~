@@ -7,7 +7,7 @@ rng(2);
 mytic = tic;
 
 %%%% Global variables
-target = imread('Materials/10x10wifi.jpg');
+target = imread('Materials/5x5wifi.jpg');
 
 target_1 = target(:,:,1); % Red channel
 target_2 = target(:,:,2); % Green channel
@@ -15,17 +15,21 @@ target_3 = target(:,:,3); % Blue channel
 
 [target_x, target_y, target_z] = size(target);
 
-pop_size = numel(target) * 2;
+pop_size = numel(target);
 channel_size = target_x * target_y;
 
+DNA_bits_red = [min(target_1, [], 'all') max(target_1, [], 'all')];
+DNA_bits_green = [min(target_2, [], 'all') max(target_2, [], 'all')];
+DNA_bits_blue = [min(target_3, [], 'all') max(target_3, [], 'all')];
 DNA_bits = [0 255];
-max_gen = 50001;
+
+max_gen = 501;
 mating_factor = 10;
-exponential_factor = 1;
+exponential_factor = 2;
 breeding_method = 1;
 mutation_rate = 0.01;
-kill_factor = 0.98;   % Only breed top x% to save time
-tolerance_1 = 20;
+kill_factor = 0.9;   % Only breed top x% to save time
+tolerance_1 = 50;
 tolerance_2 = 50;
 mutation_range = [0 30]; % Brighten/darken a pixel by an amount
 random_mutation_rate = 0.25;
@@ -37,7 +41,8 @@ avg_fitness_over_t = [];
 genetic_diverity = [];
 
 %%%%%%%%%%%%%%% Genetic Algorithm 
-population = buildPopulation(DNA_bits, pop_size, target_x, target_y, target_z);
+population = buildPopulation(DNA_bits_red, DNA_bits_green, ...
+             DNA_bits_blue, pop_size, target_x, target_y, target_z);
 
 img_gens = round(linspace(0, max_gen-1, 9));
 
@@ -53,16 +58,16 @@ while gen < max_gen
     mean_fitness_1 = mean(population_fitness_1);
     
     % Green channel
-%     population_fitness_2 = calculateFitness(pop_size, population(:,:,2,:), target_2, ...
-%                            target_x, target_y, tolerance_1, tolerance_2) + 1e-5;
-%     [max_fitness_2, max_index_2] = max(population_fitness_2);
-%     mean_fitness_2 = mean(population_fitness_2);
+    population_fitness_2 = calculateFitness(pop_size, population(:,:,2,:), target_2, ...
+                           target_x, target_y, tolerance_1, tolerance_2) + 1e-5;
+    [max_fitness_2, max_index_2] = max(population_fitness_2);
+    mean_fitness_2 = mean(population_fitness_2);
 
     % Blue channel
-%     population_fitness_3 = calculateFitness(pop_size, population(:,:,3,:), target_3, ...
-%                            target_x, target_y, tolerance_1, tolerance_2) + 1e-5;
-%     [max_fitness_3, max_index_3] = max(population_fitness_3);
-%     mean_fitness_3 = mean(population_fitness_3);
+    population_fitness_3 = calculateFitness(pop_size, population(:,:,3,:), target_3, ...
+                           target_x, target_y, tolerance_1, tolerance_2) + 1e-5;
+    [max_fitness_3, max_index_3] = max(population_fitness_3);
+    mean_fitness_3 = mean(population_fitness_3);
     
 %     %%%%%%%%%%%%%%%%%% Plotting data
 %     diversity_1 = max_fitness_1 - mean_fitness_1;
@@ -70,15 +75,15 @@ while gen < max_gen
 %     avg_fitness_over_t = [avg_fitness_over_t mean_fitness_1];
 %     genetic_diverity = [genetic_diverity diversity_1];
 %     generations = [generations gen];
-%     
-%     %%%%%%%%%%%%%%%%%% Subplot max images
-%     if any(img_gens == gen) == 1 
-%        subplot(3,3,img_num);
-%        image = population(:,:,1,max_index_1);
-%        imshow(uint8(image));
-%        title(['Generation: ', num2str(gen)]);
-%        img_num = img_num + 1;
-%     end
+    
+    %%%%%%%%%%%%%%%%%% Subplot max images
+    if any(img_gens == gen) == 1 
+       subplot(3,3,img_num);
+       image = population(:,:,:,max_index_1);
+       imshow(uint8(image));
+       title(['Generation: ', num2str(gen)]);
+       img_num = img_num + 1;
+    end
 
     %%%%%%%%%%%%%%%%%% Print report every x generations
     report = ['Gen: ', ...
@@ -86,7 +91,15 @@ while gen < max_gen
               ', MaxRed: ', ...
               num2str(max_fitness_1, '%.2f'), ...
               ', AvgRed: ', ...
-              num2str(mean_fitness_1, '%.2f')];
+              num2str(mean_fitness_1, '%.2f'), ...
+              ', MaxGreen: ', ...
+              num2str(max_fitness_2, '%.2f'), ...
+              ', AvgGreen: ', ...
+              num2str(mean_fitness_2, '%.2f'), ...
+              ', MaxBlue: ', ...
+              num2str(max_fitness_3, '%.2f'), ...
+              ', AvgBlue: ', ...
+              num2str(mean_fitness_3, '%.2f')];
     if mod(gen, 10) == 0
         disp(report)
     end
@@ -102,10 +115,10 @@ while gen < max_gen
     % Red channel
     [mating_pool_1, raffles_1] = buildMatingPool(population_fitness_1, ...
                              mating_factor, exponential_factor);
-%     [mating_pool_2, raffles_2] = buildMatingPool(population_fitness_2, ...
-%                              mating_factor, exponential_factor);
-%     [mating_pool_3, raffles_3] = buildMatingPool(population_fitness_3, ...
-%                              mating_factor, exponential_factor);
+    [mating_pool_2, raffles_2] = buildMatingPool(population_fitness_2, ...
+                             mating_factor, exponential_factor);
+    [mating_pool_3, raffles_3] = buildMatingPool(population_fitness_3, ...
+                             mating_factor, exponential_factor);
     
     %%%%%%%%%%%%%%%%%% Breed new population
     new_population = zeros(size(population));
@@ -115,24 +128,44 @@ while gen < max_gen
         
         % Red channel
         probs_1 = raffles_1 / sum(raffles_1);
-        pick_1 = randsample(mating_pool_1(1:limit_raffle), 1, true, probs_1(1:limit_raffle));
-        pick_2 = randsample(mating_pool_1(1:limit_raffle), 1, true, probs_1(1:limit_raffle));
-        parent_1 = population(:,:,1,mating_pool_1(pick_1));
-        parent_2 = population(:,:,1,mating_pool_1(pick_2));       
+        pick_1_1 = randsample(mating_pool_1(1:limit_raffle), 1, true, probs_1(1:limit_raffle));
+        pick_2_1 = randsample(mating_pool_1(1:limit_raffle), 1, true, probs_1(1:limit_raffle));
+        parent_1_1 = population(:,:,1,mating_pool_1(pick_1_1));
+        parent_2_1 = population(:,:,1,mating_pool_1(pick_2_1));       
         
         % Green channel
-        
-        
+        probs_2 = raffles_2 / sum(raffles_2);
+        pick_1_2 = randsample(mating_pool_2(1:limit_raffle), 1, true, probs_2(1:limit_raffle));
+        pick_2_2 = randsample(mating_pool_2(1:limit_raffle), 1, true, probs_2(1:limit_raffle));
+        parent_1_2 = population(:,:,2,mating_pool_2(pick_1_2));
+        parent_2_2 = population(:,:,2,mating_pool_2(pick_2_2));  
+       
+        % Blue channel
+        probs_3 = raffles_3 / sum(raffles_3);
+        pick_1_3 = randsample(mating_pool_3(1:limit_raffle), 1, true, probs_3(1:limit_raffle));
+        pick_2_3 = randsample(mating_pool_3(1:limit_raffle), 1, true, probs_3(1:limit_raffle));
+        parent_1_3 = population(:,:,3,mating_pool_3(pick_1_3));
+        parent_2_3 = population(:,:,3,mating_pool_3(pick_2_3));  
         
         %%%%%%%%% Breed a progeny 
-        progeny = breed(parent_1, parent_2, channel_size, breeding_method);
+        progeny_red = breed(parent_1_1, parent_2_1, channel_size, breeding_method);
+        progeny_green = breed(parent_1_2, parent_2_2, channel_size, breeding_method);
+        progeny_blue = breed(parent_1_3, parent_2_3, channel_size, breeding_method);
 
-        %%%%%%%%% Mutate progeny
-        progeny_mutation = causeMutation(DNA_bits, progeny, mutation_rate, ...
+        %%%%%%%% Mutate progeny
+        progeny_mutation_red = causeMutation(DNA_bits, progeny_red, mutation_rate, ...
                            target_x, target_y, target_z, ...
-                           mutation_range, random_mutation_rate);
+                           mutation_range, random_mutation_rate);                  
+        progeny_mutation_green = causeMutation(DNA_bits, progeny_green, mutation_rate, ...
+                   target_x, target_y, target_z, ...
+                   mutation_range, random_mutation_rate);                       
+        progeny_mutation_blue = causeMutation(DNA_bits, progeny_blue, mutation_rate, ...
+                   target_x, target_y, target_z, ...
+                   mutation_range, random_mutation_rate);
 
-        new_population(:,:,1,member) = progeny_mutation;
+        new_population(:,:,1,member) = progeny_mutation_red;
+        new_population(:,:,2,member) = progeny_mutation_green;
+        new_population(:,:,3,member) = progeny_mutation_blue;
     end
 
     population = new_population;   
@@ -145,55 +178,81 @@ end_msg = ['Total generations: ', num2str(gen, '%.3d')];
 disp(end_msg)
 
 mytoc = toc(mytic);
+
 sgtitle(['N = ', num2str(max_gen-1), ', size = ', num2str(target_x), ...
          'x', num2str(target_y), ', elapsedTime = ', num2str(mytoc), ' sec']);
 
-%%%%%%%%%%%%%%% Plotting & Writing txt
-% Plot maximum and average fitness over generations
-figure
-plot(max_fitness_over_t)
-hold on
-plot(avg_fitness_over_t)
-plot(genetic_diverity)
-title('Maximum fitness, average fitness, genetic diversity over time')
-xlabel('Time')
-ylabel('Fitness/Diversity')
-xlim([0 max_gen+5]);
-ylim([0 1]);
-legend('Maximum fitness', 'Average fitness', 'Genetic diversity', 'best')
-hold off
-     
-% Write data to text file
-fun_1 = @(x) sprintf('%0.4f', x);
-fun_2 = @(x) sprintf('%0.2e', x);
-fun_3 = @(x) sprintf('%0.3d', x);
-
-max_fitnesses = num2cell(max_fitness_over_t);
-max_fitnesses_cell = cellfun(fun_1, max_fitnesses, 'UniformOutput',0);
-max_T = cell2table(max_fitnesses_cell', 'VariableNames', {'MaxFit'});
-
-avg_fitnesses = num2cell(avg_fitness_over_t);
-avg_fitnesses_cell = cellfun(fun_1, avg_fitnesses, 'UniformOutput',0);
-avg_T = cell2table(avg_fitnesses_cell', 'VariableNames', {'AvgFit'});
-
-genetic_diverities = num2cell(genetic_diverity);
-genetic_diverities_cell = cellfun(fun_2, genetic_diverities, 'UniformOutput',0);
-div_T = cell2table(genetic_diverities_cell', 'VariableNames', {'Diversity'});
-
-gens = num2cell(generations);
-gens_cell = cellfun(fun_3, gens, 'UniformOutput',0);
-gen_T = cell2table(gens_cell', 'VariableNames', {'Gen'});
-
-T = [gen_T max_T avg_T div_T];
-
-writetable(T, 'color/wifi_red_channel_report.txt', 'Delimiter', '\t')    
+% %%%%%%%%%%%%%%% Plotting & Writing txt
+% % Plot maximum and average fitness over generations
+% figure
+% plot(max_fitness_over_t)
+% hold on
+% plot(avg_fitness_over_t)
+% plot(genetic_diverity)
+% title('Maximum fitness, average fitness, genetic diversity over time')
+% xlabel('Time')
+% ylabel('Fitness/Diversity')
+% xlim([0 max_gen+5]);
+% ylim([0 1]);
+% legend('Maximum fitness', 'Average fitness', 'Genetic diversity', 'best')
+% hold off
+%      
+% % Write data to text file
+% fun_1 = @(x) sprintf('%0.4f', x);
+% fun_2 = @(x) sprintf('%0.2e', x);
+% fun_3 = @(x) sprintf('%0.3d', x);
+% 
+% max_fitnesses = num2cell(max_fitness_over_t);
+% max_fitnesses_cell = cellfun(fun_1, max_fitnesses, 'UniformOutput',0);
+% max_T = cell2table(max_fitnesses_cell', 'VariableNames', {'MaxFit'});
+% 
+% avg_fitnesses = num2cell(avg_fitness_over_t);
+% avg_fitnesses_cell = cellfun(fun_1, avg_fitnesses, 'UniformOutput',0);
+% avg_T = cell2table(avg_fitnesses_cell', 'VariableNames', {'AvgFit'});
+% 
+% genetic_diverities = num2cell(genetic_diverity);
+% genetic_diverities_cell = cellfun(fun_2, genetic_diverities, 'UniformOutput',0);
+% div_T = cell2table(genetic_diverities_cell', 'VariableNames', {'Diversity'});
+% 
+% gens = num2cell(generations);
+% gens_cell = cellfun(fun_3, gens, 'UniformOutput',0);
+% gen_T = cell2table(gens_cell', 'VariableNames', {'Gen'});
+% 
+% T = [gen_T max_T avg_T div_T];
+% 
+% writetable(T, 'color/wifi_red_channel_report.txt', 'Delimiter', '\t')    
 
 %%%%%%%%%%%%%%% Functions
 
 % 1. Build initial population and store in 4-D matrix
 % Access each matrix/img by: population(:,:,:,i)
-function population = buildPopulation(DNA_bits, pop_size, target_x, target_y, target_z)
-    population = randi(DNA_bits, [target_x, target_y, target_z, pop_size]);
+function population = buildPopulation(DNA_bits_red, DNA_bits_green, ...
+                      DNA_bits_blue, pop_size, target_x, target_y, target_z, population)
+
+%     population = ones(size(population), 3);
+
+%     % Limit colors using frequency/density:
+%     % Red channel
+%     target_tab = tabulate(unique(target_1));
+%     target_val = target_tab(:,1,:);
+%     target_prob = target_tab(:,3,:) * 0.01;
+    DNA_bits_red = randsample(target_val, numel(population(:,:,1,:)), true, target_prob);
+    red = reshape(DNA_bits_red, 5, 5, 1, []);
+    
+    DNA_bits_red = randsample(target_val, numel(population(:,:,1,:)), true, target_prob);
+    red = reshape(DNA_bits_red, 5, 5, 1, []);
+    
+    DNA_bits_red = randsample(target_val, numel(population(:,:,1,:)), true, target_prob);
+    red = reshape(DNA_bits_red, 5, 5, 1, []);
+
+    population(:,:,1,:) = red;
+    population(:,:,2,:) = green;
+    population(:,:,3,:) = blue;
+    
+%     population = randi(DNA_bits, [target_x, target_y, target_z, pop_size]);
+%     population(:,:,1,:) = randi(DNA_bits_red, [target_x, target_y, 1, pop_size]);
+%     population(:,:,2,:) = randi(DNA_bits_green, [target_x, target_y, 1, pop_size]);
+%     population(:,:,3,:) = randi(DNA_bits_blue, [target_x, target_y, 1, pop_size]);
 end
     
 % 2. Calculate fitness 
@@ -278,7 +337,7 @@ function progeny_mutation = causeMutation(DNA_bits, progeny, mutation_rate, ...
                         
     random_sign = randsample([-1 0 1], 1, true, [0.5 0 0.5]);
     offset_mutations_range = randi(mutation_range, [target_x, target_y]);
-    mutations_offset = progeny_mutation + random_sign*offset_mutations_range;
+    mutations_offset = progeny_mutation + random_sign * offset_mutations_range;
     mutations_random = randi(DNA_bits, [target_x, target_y]);
     
     % Choose if pixel will be mutated with mutation rate & mutate with

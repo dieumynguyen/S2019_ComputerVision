@@ -7,7 +7,7 @@ rng(2);
 mytic = tic;
 
 %%%% Global variables
-target = imread('Materials/10x10wifi.jpg');
+target = imread('Materials/5x5wifi.jpg');
 
 target_1 = target(:,:,1); % Red channel
 target_2 = target(:,:,2); % Green channel
@@ -18,8 +18,12 @@ target_3 = target(:,:,3); % Blue channel
 pop_size = numel(target);
 channel_size = target_x * target_y;
 
+DNA_bits_red = [min(target_1, [], 'all') max(target_1, [], 'all')];
+DNA_bits_green = [min(target_2, [], 'all') max(target_2, [], 'all')];
+DNA_bits_blue = [min(target_3, [], 'all') max(target_3, [], 'all')];
 DNA_bits = [0 255];
-max_gen = 50001;
+
+max_gen = 1501;
 mating_factor = 10;
 exponential_factor = 2;
 breeding_method = 1;
@@ -37,8 +41,9 @@ avg_fitness_over_t = [];
 genetic_diverity = [];
 
 %%%%%%%%%%%%%%% Genetic Algorithm 
-population = buildPopulation(DNA_bits, pop_size, target_x, target_y, target_z);
-
+population =  buildPopulation(target_1, target_2, target_3,...
+              target_x, target_y, target_z, pop_size);
+                  
 img_gens = round(linspace(0, max_gen-1, 9));
 
 gen = 0;
@@ -70,15 +75,15 @@ while gen < max_gen
 %     avg_fitness_over_t = [avg_fitness_over_t mean_fitness_1];
 %     genetic_diverity = [genetic_diverity diversity_1];
 %     generations = [generations gen];
-%     
-%     %%%%%%%%%%%%%%%%%% Subplot max images
-%     if any(img_gens == gen) == 1 
-%        subplot(3,3,img_num);
-%        image = population(:,:,1,max_index_1);
-%        imshow(uint8(image));
-%        title(['Generation: ', num2str(gen)]);
-%        img_num = img_num + 1;
-%     end
+    
+    %%%%%%%%%%%%%%%%%% Subplot max images
+    if any(img_gens == gen) == 1 
+       subplot(3,3,img_num);
+       image = population(:,:,:,max_index_1);
+       imshow(uint8(image));
+       title(['Generation: ', num2str(gen)]);
+       img_num = img_num + 1;
+    end
 
     %%%%%%%%%%%%%%%%%% Print report every x generations
     report = ['Gen: ', ...
@@ -173,9 +178,9 @@ end_msg = ['Total generations: ', num2str(gen, '%.3d')];
 disp(end_msg)
 
 mytoc = toc(mytic);
-% 
-% sgtitle(['N = ', num2str(max_gen-1), ', size = ', num2str(target_x), ...
-%          'x', num2str(target_y), ', elapsedTime = ', num2str(mytoc), ' sec']);
+
+sgtitle(['N = ', num2str(max_gen-1), ', size = ', num2str(target_x), ...
+         'x', num2str(target_y), ', elapsedTime = ', num2str(mytoc), ' sec']);
 
 % %%%%%%%%%%%%%%% Plotting & Writing txt
 % % Plot maximum and average fitness over generations
@@ -221,13 +226,38 @@ mytoc = toc(mytic);
 
 % 1. Build initial population and store in 4-D matrix
 % Access each matrix/img by: population(:,:,:,i)
-function population = buildPopulation(target, DNA_bits, pop_size, target_x, target_y, target_z)
-%     % Limit colors using frequency/density
-%     target_tab = tabulate(unique(target));
-%     target_val = target_tab(:,1,:);
-%     target_prob = target_tab(:,3,:);
+function population = buildPopulation(target_1, target_2, target_3,...
+                      target_x, target_y, target_z, pop_size)
 
-    population = randi(DNA_bits, [target_x, target_y, target_z, pop_size]);
+    population = zeros(target_x, target_y, target_z, pop_size);
+    
+    % Limit colors using frequency/density:
+    red_tab = tabulate(unique(target_1));
+    red_val = red_tab(:,1,:);
+    red_prob = red_tab(:,3,:) * 0.01;
+    DNA_bits_red = randsample(red_val, numel(population(:,:,1,:)), true, red_prob);
+    red = reshape(DNA_bits_red, target_x, target_y, 1, []);
+    
+    green_tab = tabulate(unique(target_2));
+    green_val = green_tab(:,1,:);
+    green_prob = green_tab(:,3,:) * 0.01;
+    DNA_bits_green = randsample(green_val, numel(population(:,:,1,:)), true, green_prob);
+    green = reshape(DNA_bits_green, target_x, target_y, 1, []);
+    
+    blue_tab = tabulate(unique(target_3));
+    blue_val = blue_tab(:,1,:);
+    blue_prob = blue_tab(:,3,:) * 0.01;
+    DNA_bits_blue = randsample(blue_val, numel(population(:,:,1,:)), true, blue_prob);
+    blue = reshape(DNA_bits_blue, target_x, target_y, 1, []);
+
+    population(:,:,1,:) = red;
+    population(:,:,2,:) = green;
+    population(:,:,3,:) = blue;
+    
+%     population = randi(DNA_bits, [target_x, target_y, target_z, pop_size]);
+%     population(:,:,1,:) = randi(DNA_bits_red, [target_x, target_y, 1, pop_size]);
+%     population(:,:,2,:) = randi(DNA_bits_green, [target_x, target_y, 1, pop_size]);
+%     population(:,:,3,:) = randi(DNA_bits_blue, [target_x, target_y, 1, pop_size]);
 end
     
 % 2. Calculate fitness 
@@ -312,7 +342,7 @@ function progeny_mutation = causeMutation(DNA_bits, progeny, mutation_rate, ...
                         
     random_sign = randsample([-1 0 1], 1, true, [0.5 0 0.5]);
     offset_mutations_range = randi(mutation_range, [target_x, target_y]);
-    mutations_offset = progeny_mutation + random_sign*offset_mutations_range;
+    mutations_offset = progeny_mutation + random_sign * offset_mutations_range;
     mutations_random = randi(DNA_bits, [target_x, target_y]);
     
     % Choose if pixel will be mutated with mutation rate & mutate with

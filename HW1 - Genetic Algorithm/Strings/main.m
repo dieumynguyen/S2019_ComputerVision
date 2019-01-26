@@ -65,6 +65,7 @@ while gen < max_gen
     [max_fitness, max_index] = max(population_fitness);
     max_string = population{max_index};
     mean_fitness = mean(population_fitness);
+
     diversity = max_fitness - mean_fitness;
     max_fitness_over_t = [max_fitness_over_t max_fitness];
     avg_fitness_over_t = [avg_fitness_over_t mean_fitness];
@@ -105,7 +106,7 @@ while gen < max_gen
         % Get corresponding strings
         parent_1 = population{mating_pool(pick_1)};
         parent_2 = population{mating_pool(pick_2)};
-        
+
         progeny = breed(parent_1, parent_2, target_len, breeding_method);
 
         % Mutate progeny
