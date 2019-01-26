@@ -8,7 +8,7 @@ rng(2);
 mytic = tic;
 
 %%%% Global variables
-target = imread('Materials/25x25poop.png');
+target = imread('Materials/10x10wifi.jpg');
 
 target_1 = target(:,:,1); % Red channel
 target_2 = target(:,:,2); % Green channel
@@ -21,7 +21,7 @@ channel_size = target_x * target_y;
 
 DNA_bits = [0 255];
 
-max_gen = 50001;
+max_gen = 501;
 mating_factor = 10;
 exponential_factor = 5;
 breeding_method = 0;
@@ -56,19 +56,19 @@ while gen < max_gen
         
     %%%%%%%%%%%%%%%%%% Measure fitness
     % Red channel
-    population_fitness_1 = calculateFitness(pop_size, population(:,:,1,:), target_1, ...
+    population_fitness_1 = calculateFitness(gen, pop_size, population(:,:,1,:), target_1, ...
                            target_x, target_y, tolerance_1, tolerance_2) + 1e-5;
     [max_fitness_1, max_index_1] = max(population_fitness_1);
     mean_fitness_1 = mean(population_fitness_1);
     
     % Green channel
-    population_fitness_2 = calculateFitness(pop_size, population(:,:,2,:), target_2, ...
+    population_fitness_2 = calculateFitness(gen, pop_size, population(:,:,2,:), target_2, ...
                            target_x, target_y, tolerance_1, tolerance_2) + 1e-5;
     [max_fitness_2, max_index_2] = max(population_fitness_2);
     mean_fitness_2 = mean(population_fitness_2);
 
     % Blue channel
-    population_fitness_3 = calculateFitness(pop_size, population(:,:,3,:), target_3, ...
+    population_fitness_3 = calculateFitness(gen, pop_size, population(:,:,3,:), target_3, ...
                            target_x, target_y, tolerance_1, tolerance_2) + 1e-5;
     [max_fitness_3, max_index_3] = max(population_fitness_3);
     mean_fitness_3 = mean(population_fitness_3);
@@ -315,37 +315,42 @@ end
     
 % 2. Calculate fitness 
 % Compare each pop member to target pixel by pixel
-function fit_total = calculateFitness(pop_size, population, target,...
+function fit_total = calculateFitness(gen, pop_size, population, target,...
                               target_x, target_y, tolerance_1, tolerance_2)
-%     % Old way to compare pixel by pixel
-%     population_fitness = sum(population == target, [1,2,3]) / pop_size; 
+    % Old way to compare pixel by pixel
+    population_fitness = sum(population == target, [1,2,3]) / pop_size; 
     
     % New methods to measure fitness, will have 4 fitness values:
     % 1. Percent of values that fit within a tolerance range from the target image
     abs_term_1 = abs(population - double(target));
     fitness_1 = sum(abs_term_1 < tolerance_1, [1,2,3]) / pop_size;
     
-%     % 2. Check avg values around pixels
-%     % Compare meanFilter version of target and population with same tolerance
-%     filtered_target = meanFilter(double(target), target_x, target_y);
-%     filtered_pop = meanFilter(population, target_x, target_y);
-%     abs_term_2 = abs(filtered_pop - filtered_target);
-%     fitness_2 = sum(abs_term_2 < tolerance_1, [1,2,3]) / pop_size;
-%     
-%     % 3. Check rate of change bw pixels (how quickly the color changes)
-%     % Rate of change up/down compared to target image
-%     diff_target_updown = diff(double(target),1,1);
-%     diff_pop_updown = diff(population,1,1);
-%     abs_term_3 = abs(diff_pop_updown - diff_target_updown);
-%     fitness_3 = sum(abs_term_3 < tolerance_2, [1,2,3]) / pop_size;
-%     
-%     % Rate of change left/right compared to target image
-%     diff_target_lr = diff(double(target),1,1);
-%     diff_pop_lr = diff(population,1,1);
-%     abs_term_4 = abs(diff_pop_lr - diff_target_lr);
-%     fitness_4 = sum(abs_term_4 < tolerance_2, [1,2,3]) / pop_size;
+    % 2. Check avg values around pixels
+    % Compare meanFilter version of target and population with same tolerance
+    filtered_target = meanFilter(double(target), target_x, target_y);
+    filtered_pop = meanFilter(population, target_x, target_y);
+    abs_term_2 = abs(filtered_pop - filtered_target);
+    fitness_2 = sum(abs_term_2 < tolerance_1, [1,2,3]) / pop_size;
+    
+    % 3. Check rate of change bw pixels (how quickly the color changes)
+    % Rate of change up/down compared to target image
+    diff_target_updown = diff(double(target),1,1);
+    diff_pop_updown = diff(population,1,1);
+    abs_term_3 = abs(diff_pop_updown - diff_target_updown);
+    fitness_3 = sum(abs_term_3 < tolerance_2, [1,2,3]) / pop_size;
+    
+    % Rate of change left/right compared to target image
+    diff_target_lr = diff(double(target),1,1);
+    diff_pop_lr = diff(population,1,1);
+    abs_term_4 = abs(diff_pop_lr - diff_target_lr);
+    fitness_4 = sum(abs_term_4 < tolerance_2, [1,2,3]) / pop_size;
 
     fit_total = fitness_1;
+    
+    alpha = exp(gen);
+    sqrt_term = sqrt(fitness_1 + fitness_1 + fitness_3 + fitness_4);
+    fit_total = alpha*sqrt_term + (1 - alpha)*population_fitness;
+    fit_total = normalize(fit_total, 'range');
 end
 
 % 2.1. Mean filter to check average values around pixels
