@@ -89,7 +89,9 @@ q_normalization = q(:,3);
 new_xy = q ./ q_normalization;
 new_xy(:,3) = [];
 
-% 
+% Euclidian distance
+euclidian_dist = sqrt((image1_coords(:,1) - new_xy(:,1)).^2 + ...
+                      (image1_coords(:,2) - new_xy(:,2)).^2);
 
 % 4. Save distance value and repeat 20x. 
 
