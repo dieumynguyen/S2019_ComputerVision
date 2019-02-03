@@ -20,3 +20,9 @@ Backup of *.docx*
 *.png
 *.jpeg
 *.jpg
+*.doc
+*.docx
+*.mat
+
+/Doc
+/Lectures

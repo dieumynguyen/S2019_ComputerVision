@@ -158,7 +158,7 @@ gen_T = cell2table(gens_cell', 'VariableNames', {'Gen'});
 
 T = [gen_T max_T avg_T div_T];
 
-writetable(T, 'GRAYSCALE_REPORT.txt', 'Delimiter', '\t')    
+writetable(T, 'testestestugh.txt', 'Delimiter', '\t')    
 
 %%%%%%%%%%%%%%% Functions
 

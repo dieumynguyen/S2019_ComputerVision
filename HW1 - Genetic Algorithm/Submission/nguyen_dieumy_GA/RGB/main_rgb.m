@@ -8,7 +8,7 @@ rng(2);
 mytic = tic;
 
 %%%% Global variables
-target = imread('Materials/');
+target = imread('../Materials/10x10wifi.jpg');
 
 target_1 = target(:,:,1); % Red channel
 target_2 = target(:,:,2); % Green channel
@@ -21,10 +21,10 @@ channel_size = target_x * target_y;
 
 DNA_bits = [0 255];
 
-max_gen = 101;
+max_gen = 501;
 mating_factor = 10;
 exponential_factor = 5;
-breeding_method = 0;
+breeding_method = 1;
 mutation_rate = 0.01;
 kill_factor = 0.98;   % Only breed top x% to save time
 tolerance_1 = 10;
@@ -165,8 +165,8 @@ while gen < max_gen
 
         %%%%%%%% Mutate progeny
         progeny_mutation_red = causeMutation(DNA_bits, progeny_red, mutation_rate, ...
-                           target_x, target_y, target_z, ...
-                           mutation_range, random_mutation_rate);                  
+                   target_x, target_y, target_z, ...
+                   mutation_range, random_mutation_rate);                  
         progeny_mutation_green = causeMutation(DNA_bits, progeny_green, mutation_rate, ...
                    target_x, target_y, target_z, ...
                    mutation_range, random_mutation_rate);                       
@@ -183,6 +183,18 @@ while gen < max_gen
                          
     gen = gen + 1;
     
+    %%%%%%%%%%%%%%% Save best image
+    if gen == 500
+        f = figure('visible','off');
+        best_image = zeros(target_x, target_y, target_z);
+        best_image(:,:,1) = population(:,:,1,max_index_1);
+        best_image(:,:,2) = population(:,:,2,max_index_2);
+        best_image(:,:,3) = population(:,:,3,max_index_3);
+        title('Best image')
+        imshow(uint8(best_image));
+        saveas(f,'best_colored_img.png');
+    end
+    
 end
 
 end_msg = ['Total generations: ', num2str(gen, '%.3d')];
@@ -192,15 +204,6 @@ mytoc = toc(mytic);
 
 sgtitle(['N = ', num2str(max_gen-1), ', size = ', num2str(target_x), ...
          'x', num2str(target_y), ', elapsedTime = ', num2str(mytoc), ' sec']);
-
-%%%%%%%%%%%%%%% Save best image
-figure
-best_image = zeros(target_x, target_y, target_z);
-best_image(:,:,1) = population(:,:,1,max_index_1);
-best_image(:,:,2) = population(:,:,2,max_index_2);
-best_image(:,:,3) = population(:,:,3,max_index_3);
-title('Best image')
-imwrite(uint8(best_image),'Color/best_colored_img.png')
 
 %%%%%%%%%%%%%%% Plotting 
 % Plot maximum and average fitness over generations
@@ -244,13 +247,13 @@ hold off
      
 %%%%%%%%%%%%%%% Write data to text file
 writetxt(generations, max_fitness_over_t_1, ...
-         avg_fitness_over_t_1, genetic_diverity_1, 'Color/red_report.txt');
+         avg_fitness_over_t_1, genetic_diverity_1, 'red_report.txt');
 
 writetxt(generations, max_fitness_over_t_2, ...
-         avg_fitness_over_t_2, genetic_diverity_2, 'Color/green_report.txt');
+         avg_fitness_over_t_2, genetic_diverity_2, 'green_report.txt');
      
 writetxt(generations, max_fitness_over_t_3, ...
-         avg_fitness_over_t_3, genetic_diverity_3, 'Color/blue_report.txt');
+         avg_fitness_over_t_3, genetic_diverity_3, 'blue_report.txt');
 
 %%%%%%%%%%%%%%% Functions
 
@@ -289,22 +292,24 @@ function population = buildPopulation(target_1, target_2, target_3,...
 
     population = zeros(target_x, target_y, target_z, pop_size);
     
+    flexibility = 0;
+    
     % Limit colors using frequency/density:
     red_tab = tabulate(unique(target_1));
     red_val = red_tab(:,1,:);
-    red_prob = red_tab(:,3,:) * 0.01;
+    red_prob = (red_tab(:,3,:) + flexibility) * 0.01;
     DNA_bits_red = randsample(red_val, numel(population(:,:,1,:)), true, red_prob);
     red = reshape(DNA_bits_red, target_x, target_y, 1, []);
     
     green_tab = tabulate(unique(target_2));
     green_val = green_tab(:,1,:);
-    green_prob = green_tab(:,3,:) * 0.01;
+    green_prob = (green_tab(:,3,:) + flexibility) * 0.01;
     DNA_bits_green = randsample(green_val, numel(population(:,:,1,:)), true, green_prob);
     green = reshape(DNA_bits_green, target_x, target_y, 1, []);
     
     blue_tab = tabulate(unique(target_3));
     blue_val = blue_tab(:,1,:);
-    blue_prob = blue_tab(:,3,:) * 0.01;
+    blue_prob = (blue_tab(:,3,:) + flexibility) * 0.01;
     DNA_bits_blue = randsample(blue_val, numel(population(:,:,1,:)), true, blue_prob);
     blue = reshape(DNA_bits_blue, target_x, target_y, 1, []);
 
@@ -317,33 +322,33 @@ end
 % Compare each pop member to target pixel by pixel
 function fit_total = calculateFitness(pop_size, population, target,...
                               target_x, target_y, tolerance_1, tolerance_2)
-    % Old way to compare pixel by pixel
-    population_fitness = sum(population == target, [1,2,3]) / pop_size; 
+%     % Old way to compare pixel by pixel
+%     population_fitness = sum(population == target, [1,2,3]) / pop_size; 
     
     % New methods to measure fitness, will have 4 fitness values:
     % 1. Percent of values that fit within a tolerance range from the target image
     abs_term_1 = abs(population - double(target));
     fitness_1 = sum(abs_term_1 < tolerance_1, [1,2,3]) / pop_size;
     
-    % 2. Check avg values around pixels
-    % Compare meanFilter version of target and population with same tolerance
-    filtered_target = meanFilter(double(target), target_x, target_y);
-    filtered_pop = meanFilter(population, target_x, target_y);
-    abs_term_2 = abs(filtered_pop - filtered_target);
-    fitness_2 = sum(abs_term_2 < tolerance_1, [1,2,3]) / pop_size;
-    
-    % 3. Check rate of change bw pixels (how quickly the color changes)
-    % Rate of change up/down compared to target image
-    diff_target_updown = diff(double(target),1,1);
-    diff_pop_updown = diff(population,1,1);
-    abs_term_3 = abs(diff_pop_updown - diff_target_updown);
-    fitness_3 = sum(abs_term_3 < tolerance_2, [1,2,3]) / pop_size;
-    
-    % Rate of change left/right compared to target image
-    diff_target_lr = diff(double(target),1,1);
-    diff_pop_lr = diff(population,1,1);
-    abs_term_4 = abs(diff_pop_lr - diff_target_lr);
-    fitness_4 = sum(abs_term_4 < tolerance_2, [1,2,3]) / pop_size;
+%     % 2. Check avg values around pixels
+%     % Compare meanFilter version of target and population with same tolerance
+%     filtered_target = meanFilter(double(target), target_x, target_y);
+%     filtered_pop = meanFilter(population, target_x, target_y);
+%     abs_term_2 = abs(filtered_pop - filtered_target);
+%     fitness_2 = sum(abs_term_2 < tolerance_1, [1,2,3]) / pop_size;
+%     
+%     % 3. Check rate of change bw pixels (how quickly the color changes)
+%     % Rate of change up/down compared to target image
+%     diff_target_updown = diff(double(target),1,1);
+%     diff_pop_updown = diff(population,1,1);
+%     abs_term_3 = abs(diff_pop_updown - diff_target_updown);
+%     fitness_3 = sum(abs_term_3 < tolerance_2, [1,2,3]) / pop_size;
+%     
+%     % Rate of change left/right compared to target image
+%     diff_target_lr = diff(double(target),1,1);
+%     diff_pop_lr = diff(population,1,1);
+%     abs_term_4 = abs(diff_pop_lr - diff_target_lr);
+%     fitness_4 = sum(abs_term_4 < tolerance_2, [1,2,3]) / pop_size;
 
     fit_total = fitness_1;
 end

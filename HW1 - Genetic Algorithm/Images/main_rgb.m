@@ -8,7 +8,7 @@ rng(2);
 mytic = tic;
 
 %%%% Global variables
-target = imread('Materials/25x25poop.png');
+target = imread('Materials/10x10wifi.jpg');
 
 target_1 = target(:,:,1); % Red channel
 target_2 = target(:,:,2); % Green channel
@@ -21,13 +21,14 @@ channel_size = target_x * target_y;
 
 DNA_bits = [0 255];
 
-max_gen = 50001;
+max_gen = 1001;
 mating_factor = 10;
 exponential_factor = 5;
-breeding_method = 0;
+breeding_method = 1;
 mutation_rate = 0.01;
 kill_factor = 0.98;   % Only breed top x% to save time
-tolerance_1 = 10;
+init_tolerance_1 = 10;
+tolerance_1_decay_rate = 1;
 tolerance_2 = 50;
 mutation_range = [0 10]; % Brighten/darken a pixel by an amount
 random_mutation_rate = 0.5;
@@ -53,7 +54,10 @@ img_gens = round(linspace(0, max_gen-1, 9));
 gen = 0;
 img_num = 1;  % Increment when each of 9 subplots is plotted 
 while gen < max_gen
-        
+    
+    tolerance_1 = init_tolerance_1 * exp(-tolerance_1_decay_rate);
+    tolerance_1 = max(tolerance_1, 0.001);
+    
     %%%%%%%%%%%%%%%%%% Measure fitness
     % Red channel
     population_fitness_1 = calculateFitness(pop_size, population(:,:,1,:), target_1, ...
@@ -165,8 +169,8 @@ while gen < max_gen
 
         %%%%%%%% Mutate progeny
         progeny_mutation_red = causeMutation(DNA_bits, progeny_red, mutation_rate, ...
-                           target_x, target_y, target_z, ...
-                           mutation_range, random_mutation_rate);                  
+                   target_x, target_y, target_z, ...
+                   mutation_range, random_mutation_rate);                  
         progeny_mutation_green = causeMutation(DNA_bits, progeny_green, mutation_rate, ...
                    target_x, target_y, target_z, ...
                    mutation_range, random_mutation_rate);                       
@@ -183,6 +187,19 @@ while gen < max_gen
                          
     gen = gen + 1;
     
+    %%%%%%%%%%%%%%% Save best image
+    if gen == 500
+        f = figure('visible','off');
+        best_image = zeros(target_x, target_y, target_z);
+        best_image(:,:,1) = population(:,:,1,max_index_1);
+        best_image(:,:,2) = population(:,:,2,max_index_2);
+        best_image(:,:,3) = population(:,:,3,max_index_3);
+        title('Best image')
+        imshow(uint8(best_image));
+        saveas(f,'Color/best_colored_img.png');
+%         imwrite(uint8(best_image),'Color/best_colored_img.png') 
+    end
+    
 end
 
 end_msg = ['Total generations: ', num2str(gen, '%.3d')];
@@ -192,15 +209,6 @@ mytoc = toc(mytic);
 
 sgtitle(['N = ', num2str(max_gen-1), ', size = ', num2str(target_x), ...
          'x', num2str(target_y), ', elapsedTime = ', num2str(mytoc), ' sec']);
-
-%%%%%%%%%%%%%%% Save best image
-figure
-best_image = zeros(target_x, target_y, target_z);
-best_image(:,:,1) = population(:,:,1,max_index_1);
-best_image(:,:,2) = population(:,:,2,max_index_2);
-best_image(:,:,3) = population(:,:,3,max_index_3);
-title('Best image')
-imwrite(uint8(best_image),'Color/best_colored_img.png')
 
 %%%%%%%%%%%%%%% Plotting 
 % Plot maximum and average fitness over generations
@@ -289,22 +297,24 @@ function population = buildPopulation(target_1, target_2, target_3,...
 
     population = zeros(target_x, target_y, target_z, pop_size);
     
+    flexibility = 0;
+    
     % Limit colors using frequency/density:
     red_tab = tabulate(unique(target_1));
     red_val = red_tab(:,1,:);
-    red_prob = red_tab(:,3,:) * 0.01;
+    red_prob = (red_tab(:,3,:) + flexibility) * 0.01;
     DNA_bits_red = randsample(red_val, numel(population(:,:,1,:)), true, red_prob);
     red = reshape(DNA_bits_red, target_x, target_y, 1, []);
     
     green_tab = tabulate(unique(target_2));
     green_val = green_tab(:,1,:);
-    green_prob = green_tab(:,3,:) * 0.01;
+    green_prob = (green_tab(:,3,:) + flexibility) * 0.01;
     DNA_bits_green = randsample(green_val, numel(population(:,:,1,:)), true, green_prob);
     green = reshape(DNA_bits_green, target_x, target_y, 1, []);
     
     blue_tab = tabulate(unique(target_3));
     blue_val = blue_tab(:,1,:);
-    blue_prob = blue_tab(:,3,:) * 0.01;
+    blue_prob = (blue_tab(:,3,:) + flexibility) * 0.01;
     DNA_bits_blue = randsample(blue_val, numel(population(:,:,1,:)), true, blue_prob);
     blue = reshape(DNA_bits_blue, target_x, target_y, 1, []);
 
