@@ -20,6 +20,7 @@ Backup of *.docx*
 
 *.doc
 *.docx
+*.zip
 
 /Doc
 /Lectures
