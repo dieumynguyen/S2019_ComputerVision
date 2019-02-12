@@ -1,7 +1,7 @@
-Name: Dieu My Nguyen
-Semester: Spring 2019
-Course Number: CSCI 5722 - Distance
-Assignment 2: Image Mosaics
+Name: Dieu My Nguyen <br>
+Semester: Spring 2019 <br>
+Course Number: CSCI 5722 - Distance <br>
+Assignment 2: Image Mosaics <br>
 Instructor: Ioana Fleming
 
 This is an implementation of an image stitcher that uses image warping and homographies to create an image mosaic from two input images. This is composed of the following functions in their respective scripts:
@@ -19,7 +19,7 @@ image, and return a new image that is the (inverse) warp of the input image usin
 
 Two preliminary functions, warp2() and mosaic2(), were my first attempt to solve this problem. They're not optimal due to nested for loops, but they also work ok.
 
-Run the complete code in main.m file to obtain 4 figures for the 4 sets of images and their resulting mosaics: the provided Squared images, my own two sets of images (Bee and Hike), and the Frame images. Running main.m will show the 4 figures, each with the 2 original images and their mosaic.
+Run the complete code in main.m file to obtain 4 figures for the 4 sets of images and their resulting mosaics: the provided Squared images, my own two sets of images (Bee and Hike), and the Frame images. Running main.m will show the 4 figures, each with the 2 original images and their mosaic. Note that there are saved point sets in .mat files. Uncomment appropriate lines to select new points for each image set.
 
 Input images are from Materials/.
 The results (4 figures and 4 mosaics) are saved in Results/.  
