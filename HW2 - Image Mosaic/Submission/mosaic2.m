@@ -6,51 +6,56 @@
 % Instructor: Ioana Fleming
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [outimg] = mosaic2(img1,img2,up,left)
-    [m1,n1,k] = size(img1);
-    [m2,n2,k] = size(img2);
-    m = max(m1,m2+up);
-    if up < 0
-        m = m - up;
+function mosaic_img = mosaic2(unwarped_image, warped_image, up_offset, left_offset)
+    [m1, n1, ~] = size(unwarped_image);
+    [m2, n2, ~] = size(warped_image);
+
+    % Determine size of mosaic
+    m = max(m1, m2+up_offset);
+    if up_offset < 0
+        m = m - up_offset;
     end
-    n = max(n1,n2+left);
-    if left < 0
-        n = n - left;
+    n = max(n1,n2+left_offset);
+    if left_offset < 0
+        n = n - left_offset;
     end
-    outimg = uint8(zeros([m,n,3]));
-    % first, draw the unwarped image
-    for i = 1 : m1
-        for j = 1 : n1
-            if up < 0
-                x = i - up;
+
+    % Initialize mosaic image
+    mosaic_img = uint8(zeros([m,n,3]));
+
+    % Place unwarped image onto mosaic
+    for i = 1:m1
+        for j = 1:n1
+            if up_offset < 0
+                x = i - up_offset;
             else
                 x = i;
             end
-            if left < 0
-                y = j - left;
+            if left_offset < 0
+                y = j - left_offset;
             else
                 y = j;
             end
-            outimg(x,y,:) = img1(i,j,:);
+            mosaic_img(x,y,:) = unwarped_image(i,j,:);
         end
     end
-    % then, draw the warped image including the overlapped part
-    for i = 1 : m2
-        for j = 1 : n2
-            if up < 0
+
+    % Place warped image onto mosaic
+    for i = 1:m2
+        for j = 1:n2
+            if up_offset < 0
                 x = i;
             else
-                x = i + up;
+                x = i + up_offset;
             end
-            if left < 0
+            if left_offset < 0
                 y = j;
             else
-                y = j + left;
+                y = j + left_offset;
             end
-            if sum(img2(i,j,:)) ~= 0
-                outimg(x,y,:) = img2(i,j,:);
+            if sum(warped_image(i,j,:)) ~= 0
+                mosaic_img(x,y,:) = warped_image(i,j,:);
             end
         end
     end
 end
-

@@ -7,6 +7,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [warped_img, bb_xmin, bb_ymin] = warp1(img, H)
+    % Warp an image into the plane of another image
+    % with a recovered homography matrix, H.
+
     [m, n, ~] = size(img);
 
     % Make bounding box
@@ -28,8 +31,10 @@ function [warped_img, bb_xmin, bb_ymin] = warp1(img, H)
     [U, V] = meshgrid(bb_xmin:bb_xmax, bb_ymin:bb_ymax);
     [nrows, ncols] = size(U);
 
+    % Inverse of H for inverse mapping
     invH = inv(H);
 
+    % Change xy coords to homogeneous and convert back
     u = U(:);
     v = V(:);
     x1 = invH(1,1)*u + invH(1,2)*v + invH(1,3);
@@ -39,9 +44,9 @@ function [warped_img, bb_xmin, bb_ymin] = warp1(img, H)
     V(:) = y1 .* w1;
 
     warped_img(nrows, ncols, 3) = 1;
-    
     img_double = im2double(img);
 
+    % Create warped image, each channel separately for RGB
     warped_img(:,:,1) = interp2(img_double(:,:,1),U,V,'bilinear');
     warped_img(:,:,2) = interp2(img_double(:,:,2),U,V,'bilinear');
     warped_img(:,:,3) = interp2(img_double(:,:,3),U,V,'bilinear');

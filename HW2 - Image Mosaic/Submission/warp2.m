@@ -6,45 +6,49 @@
 % Instructor: Ioana Fleming
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [outimg,up,left] = warp2(inimg, H)
-    [m,n,k] = size(inimg);
-    inv_H = inv(H);
-    % find the boundary of the warp of the image
-    up = Inf;
-    down = -Inf;
-    left = Inf;
-    right = -Inf;
-    for i = 1 : m
-        for j = 1 : n
-            tmp = H*[i,j,1].';
-            tmp = tmp/tmp(3,1);
-            if tmp(1) < up
-                up = round(tmp(1));
+function [warped_img, up_offset, left_offset] = warp2(img, H)
+    % This function was my first attempt to warp
+    % Not vectorized or optimal but works ok
+
+    [m, n, ~] = size(img);
+    invH = inv(H);
+
+    % Get bounds of the warp
+    up_offset = 1e10;
+    down_offset = -1e10;
+    left_offset = 1e10;
+    right_offset = -1e10;
+    for i = 1:m
+        for j = 1:n
+            coords = H * [i,j,1].';
+            coords = coords / coords(3,1);
+            if coords(1) < up_offset
+                up_offset = round(coords(1));
             end
-            if tmp(1) > down
-                down = round(tmp(1));
+            if coords(1) > down_offset
+                down_offset = round(coords(1));
             end
-            if tmp(2) < left
-                left = round(tmp(2));
+            if coords(2) < left_offset
+                left_offset = round(coords(2));
             end
-            if tmp(2) > right
-                right = round(tmp(2));
+            if coords(2) > right_offset
+                right_offset = round(coords(2));
             end
         end
     end
 
-    outimg = uint8(zeros(down-up,right-left,3));
-    [mm nn k] = size(outimg);
-    for i = 1 : mm
-        for j = 1 : nn
-            x = i + up;
-            y = j + left;
-            sample_cor = inv_H * [x,y,1].';
-            sample_cor = round(sample_cor / sample_cor(3,1));
-            if sample_cor(1,1) > 0 && sample_cor(1,1) <= m && sample_cor(2,1) > 0 && sample_cor(2,1) <= n
-                outimg(i,j,:) = inimg(sample_cor(1,1),sample_cor(2,1),:);
+    % Apply invH * (x,y), create warped image
+    warped_img = uint8(zeros(down_offset-up_offset, right_offset-left_offset, 3));
+    [mm, nn, ~] = size(warped_img);
+    for i = 1:mm
+        for j = 1:nn
+            x = i + up_offset;
+            y = j + left_offset;
+            coord = invH * [x,y,1].';
+            coord = round(coord / coord(3,1));
+            if coord(1,1) > 0 && coord(1,1) <= m && coord(2,1) > 0 && coord(2,1) <= n
+                warped_img(i,j,:) = img(coord(1,1), coord(2,1),:);
             end
         end
     end
 end
-

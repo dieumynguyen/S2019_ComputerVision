@@ -30,10 +30,10 @@ load('coordinates_matrix_1.mat');
 H = computeH(coordinates_matrix_1, num_points, num_trials);
 
 %------ Task 3. Warping between image planes
-[warped_img, bb_xmin, bb_ymin] = warp1(img1, H);
+[warped_img, bb_xmin, bb_ymin] = warp1(img2, H);
 
 %------ Task 4. Create the output mosaic
-mosaic_img = mosaic(img2, warped_img, bb_xmin, bb_ymin, 0, 0);
+mosaic_img = mosaic(img1, warped_img, bb_xmin, bb_ymin, 0, 0);
 
 %------ Task 5.1. Display original images and mosaic
 figure;
@@ -84,7 +84,7 @@ img2_hike = imread('Materials/Hike2.jpg');
 % save("coordinates_matrix_3.mat", "coordinates_matrix_3");
 load('coordinates_matrix_3.mat');
 H_hike = computeH(coordinates_matrix_3, num_points, num_trials);
-% Using warp2() and mosaic2(0 functions which are not optimized
+% Using warp2() and mosaic2() functions which are not optimized
 % but work better for these images than warp1() and mosaic()
 [warped_img_hike, up, left] = warp2(img1_hike, H_hike);
 [mosaic_img_hike] = mosaic2(img2_hike, warped_img_hike, up, left);
@@ -100,7 +100,7 @@ imagesc(mosaic_img_hike);
 title('Hike Mosaic');
 imwrite(mosaic_img_hike, 'Results/HikeMosaic.jpg');
 
-%------ Task 5.3. Warp 1 image into a frame of the other
+%------ Task 5.3. Warp an image into a frame of the other
 % Photo credits: Bartush, Photography Pro
 num_points = 4;
 img1_frame = imread('Materials/Frame1.jpg');
@@ -123,4 +123,3 @@ subplot(2,2,[3,4]);
 imagesc(mosaic_img_frame);
 title('Frame Mosaic');
 imwrite(mosaic_img_frame, 'Results/FrameMosaic.jpg');
-
