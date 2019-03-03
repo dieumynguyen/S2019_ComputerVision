@@ -8,32 +8,33 @@
 
 % Write a script that compares the performance of a 3x3 mean
 % filter, a 3x3 median filter and Gaussian filters with different 
-% values of ?. Get familiar with the following MATLAB functions: 
+% values of sigma. Get familiar with the following MATLAB functions: 
 % imnoise, medfilt2, conv2, filter2, fspecial, imfilter, and edge.
 
-% clear all; close all
+clear all; close all
 
 % Load image and convert to grayscale
 img = imread("peppers.png");
 img_grayscale = rgb2gray(img);
 
 % Add salt & pepper noise to image
-% subplot(3,2,1);
-% img_noise = imnoise(img_grayscale, 'salt & pepper');
-% imshow(img_noise);
-% title("Salt & pepper image");
-
-% Add Gaussian white noise with mean 0 and ? = 1 
-% in the [0, 255] range (or ? = 1/256 in the [0, 1] range) 
-img_double = double(img_grayscale) / 255;
 subplot(3,2,1);
-img_noise = imnoise(img_double, 'gaussian', 0, 1/256);
+img_noise = imnoise(img_grayscale, 'salt & pepper');
 imshow(img_noise);
-title("Gaussian noise image");
+title("Salt & pepper image");
+
+% Uncomment to add Gaussian white noise with mean 0 and ? = 1 
+% in the [0, 255] range (or 1/256 in the [0, 1] range) 
+% img_double = double(img_grayscale) / 255;
+% subplot(3,2,1);
+% img_noise = imnoise(img_double, 'gaussian', 0, 1/256);
+% imshow(img_noise);
+% title("Gaussian noise image");
 
 % Mean filter:
 subplot(3,2,2);
-img_mean = filter2(fspecial('average', 3), img_noise) / 255;
+% Divide by 256 if salt and pepper noise
+img_mean = filter2(fspecial('average', 3), img_noise) / 256; 
 imshow(img_mean);
 title("Mean filter");
 
