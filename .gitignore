@@ -1,0 +1,14 @@
+.DS_Store
+DS_Store
+*.doc*
+*.docx*
+*.xls*
+*.xlk
+*.ppt*
+*.doc
+*.docx
+*.zip
+
+/Doc
+/Lectures
+/Etc
