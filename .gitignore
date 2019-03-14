@@ -9,6 +9,12 @@ DS_Store
 *.docx
 *.zip
 
+*.png
+*.jpg
+*.jpeg
+
+*.mat
+
 /Doc
 /Lectures
 /Etc
