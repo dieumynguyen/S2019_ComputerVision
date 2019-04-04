@@ -21,4 +21,12 @@ function featuresNorm = NormalizeFeatures(features)
 %                HINT: The functions mean and std may be useful                %
 %                                                                              %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    s=size(features);
+    tempfeat=reshape(features,s(1)*s(2),s(3));
+    means=mean(tempfeat);
+    stds=std(tempfeat);
+    teampfeat=(tempfeat-means)./stds;
+    featuresNorm=reshape(teampfeat,s(1),s(2),s(3));
+
+
 end

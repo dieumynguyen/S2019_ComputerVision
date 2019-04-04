@@ -46,10 +46,7 @@ function idx = KMeansClustering(X, k, visualize2D, centers)
         %                                                                     %
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
-        % 1. Initialize k points, called means, randomly
-        
-        
-        % 2. 
+        centers = X(randperm(m, k), :);
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %                                                                     %
@@ -82,7 +79,27 @@ function idx = KMeansClustering(X, k, visualize2D, centers)
         %                                                                     %
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
+        % Intialize cluster stats
+        sum_cluster = zeros(k, n);
+        size_cluster = zeros(k);
         
+        for i = 1:m
+            % Using euclidean distance as metric for similarity bw a point
+            % and centers
+            point = X(i, :);
+            distances = zeros(k, 1);
+            distances = pdist2(point, centers); 
+            
+            % Find smallest distance and its idx
+            [min_distance, min_idx] = min(distances);
+            
+            % Assign point to center with smallest distance
+            idx(i) = min_idx;
+            
+            % Assign sum and size of cluster
+            sum_cluster(min_idx, :) = sum_cluster(min_idx, :) + X(i, :);
+            size_cluster(min_idx) = size_cluster(min_idx) + 1; 
+        end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %                                                                     %
@@ -101,6 +118,11 @@ function idx = KMeansClustering(X, k, visualize2D, centers)
         %                            YOUR CODE HERE                           %
         %                                                                     %
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+        for j = 1:k
+            sum_cluster(j, :) = sum_cluster(j, :) / size_cluster(j);
+            centers(j, :) = sum_cluster(j, :);
+        end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %                                                                     %

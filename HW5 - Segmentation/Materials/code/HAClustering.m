@@ -89,7 +89,6 @@ function idx = HAClustering(X, k, visualize2D)
         figHandle = figure;
     end
     
-    
     % In the 2D case we can easily visualize the starting points.
     if n == 2 && visualize2D          
         VisualizeClusters2D(X, idx, centroids, figHandle);
@@ -97,7 +96,6 @@ function idx = HAClustering(X, k, visualize2D)
     end
     
     while num_clusters > k
-        
         
         % Find the pair of clusters that are closest together.
         % Set i and j to be the indices of the nearest pair of clusters.
@@ -109,6 +107,12 @@ function idx = HAClustering(X, k, visualize2D)
         %                                                                     %
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
+        min_dis= min(min(dists));
+        [ii jj] = find(dists==min_dis);    
+        i =ii(1);
+        j= jj(1);
+
+       
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %                                                                     %
         %                            END YOUR CODE                            %
@@ -136,6 +140,8 @@ function idx = HAClustering(X, k, visualize2D)
         %                                                                     %
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%      
         
+        idx(idx==j)=i;
+        
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %                                                                     %
         %                            END YOUR CODE                            %
@@ -152,6 +158,9 @@ function idx = HAClustering(X, k, visualize2D)
         %                                                                     %
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
+        centroids(i,:) = mean(X(idx==i,:),1);
+        centroids(j,:)= Inf;
+        
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %                                                                     %
         %                            END YOUR CODE                            %
@@ -164,6 +173,9 @@ function idx = HAClustering(X, k, visualize2D)
         %                            YOUR CODE HERE                           %
         %                                                                     %
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        cluster_sizes(i) = sum(idx==i);
+        cluster_sizes(j)=0;
+        
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %                                                                     %
@@ -180,6 +192,9 @@ function idx = HAClustering(X, k, visualize2D)
         %                            YOUR CODE HERE                           %
         %                                                                     %
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+        dists = squareform(pdist(centroids));
+        dists = dists + diag(Inf(m, 1));
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %                                                                     %

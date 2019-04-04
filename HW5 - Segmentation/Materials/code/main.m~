@@ -1,0 +1,4 @@
+
+% Task 1.1 Test k-means algorithm
+visualize = true;
+KMeansClusteringTest(visualize);

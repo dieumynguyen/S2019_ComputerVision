@@ -17,7 +17,7 @@ normalizeFeatures = true;
 
 % Whether or not to resize the image before clustering. If this script
 % runs too slowly then you should set resize to a value less than 1.
-resize = 1.0;
+resize = 0.5;
 
 % Use all of the above parameters to actually compute a segmentation.
 segments = ComputeSegmentation(img, k, clusteringMethod, featureFn, ...

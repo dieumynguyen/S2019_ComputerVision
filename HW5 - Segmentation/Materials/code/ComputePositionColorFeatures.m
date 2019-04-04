@@ -20,4 +20,8 @@ function features = ComputePositionColorFeatures(img)
     %                              YOUR CODE HERE                             %
     %                                                                         %
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    features(:,:,1:3) = double(img);
+    features(:,:,4) = repmat(1:width, height, 1);
+    features(:,:,5) = repmat((1:height)', 1, width);
 end
