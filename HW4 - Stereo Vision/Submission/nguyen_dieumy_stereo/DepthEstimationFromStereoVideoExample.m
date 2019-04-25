@@ -14,7 +14,7 @@
 %% Load the Parameters of the Stereo Camera
 % Load the |stereoParameters| object, which is the result of calibrating the 
 % camera using either the |stereoCameraCalibrator| app or the |estimateCameraParameters| 
-% function.
+% function. 
 
 % Load the stereoParameters object.
 load('handshakeStereoParams.mat');
@@ -174,7 +174,7 @@ saveas(gcf,'Results/Uniqueness_disparity_maps.png')
 % Choose disparity map with lowest cost
 % Source: https://www.cs.auckland.ac.nz/~rklette/CCV-CIMAT/pdfs/B20-StereoMatchingPart3.pdf
 % Doesn't work too well
-% 
+
 smoothness_thresholds = [5, 10, 20, 50];
 window_size = 1;
 
